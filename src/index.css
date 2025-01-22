@@ -1,0 +1,254 @@
+/* Import fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-mintwhite font-sans text-darkgrey m-0 p-0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  h1 {
+    @apply font-display text-newgrey text-big font-bold;
+  }
+
+  h1 span {
+    @apply text-lightblue;
+  }
+
+  h2 {
+    @apply text-h2 font-strong;
+  }
+
+  h3 {
+    @apply text-x-large font-mid-normal;
+  }
+
+  h4 {
+    @apply text-large font-normal;
+  }
+
+  h5 {
+    @apply text-h5 font-normal;
+  }
+
+  h6 {
+    @apply text-medium font-normal;
+  }
+
+  p {
+    @apply text-medium font-normal;
+  }
+
+  a {
+    @apply no-underline text-darkblue;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply shadow-btn uppercase text-medium;
+  }
+
+  .btn:hover {
+    @apply bg-mintwhite text-darkblack cursor-pointer;
+  }
+
+  .btn-default {
+    @apply btn bg-darkblue text-dirtywhite border-none rounded-btn p-btn-default;
+  }
+
+  .btn-large {
+    @apply btn bg-darkblue text-dirtywhite border-none rounded-btn p-btn-large;
+  }
+
+  .btn-secondary {
+    @apply btn bg-green text-dirtywhite border-none rounded-btn p-btn-large w-full;
+  }
+
+  .btn-warning {
+    @apply btn bg-red text-dirtywhite border-none rounded-btn p-btn-large;
+  }
+
+  .btn-vlarge {
+    @apply btn bg-darkblue text-dirtywhite border-none rounded-btn p-btn-vlarge;
+  }
+
+  .warning {
+    @apply bg-red;
+  }
+
+  .theme {
+    @apply bg-lightblue text-darkblack;
+  }
+
+  .success {
+    @apply bg-yellow text-lightgrey font-bold;
+  }
+
+  .form-mgt {
+    @apply mx-auto flex justify-center items-center gap-4 mt-8;
+  }
+
+  .form-group {
+    @apply m-2.5;
+  }
+
+  .form-group label {
+    @apply block text-medium mb-1;
+  }
+
+  .form-group input {
+    @apply w-full p-0.6 text-medium border-none rounded-form shadow-form h-1.8 bg-mintwhite mb-0.6;
+  }
+
+  .form-group textarea {
+    @apply w-full p-0.6 text-medium border-none rounded-textarea shadow-form min-h-[7rem] bg-mintwhite mb-0.6 resize-y;
+  }
+
+  .form-group select {
+    @apply w-full p-0.6 text-medium border-none rounded-form shadow-form h-12 bg-mintwhite mb-0.6;
+  }
+
+  .card {
+    @apply bg-white bg-opacity-95 backdrop-blur-sm rounded-form shadow-form overflow-hidden
+           border border-dirtywhite transition-all duration-200 hover:shadow-lg;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-dirtywhite;
+  }
+
+  .card-header.bg-primary-600 {
+    @apply bg-darkblue text-dirtywhite;
+  }
+
+  .card-header.bg-secondary-600 {
+    @apply bg-darkgrey text-dirtywhite;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 bg-mintwhite bg-opacity-50 border-t border-dirtywhite;
+  }
+
+  /* Toggle Switch */
+  .switch {
+    @apply relative inline-block w-14 h-8;
+  }
+
+  .switch input {
+    @apply opacity-0 w-0 h-0;
+  }
+
+  .slider {
+    @apply absolute cursor-pointer inset-0 bg-darkblack transition-all duration-300 rounded-full;
+  }
+
+  .slider:before {
+    @apply absolute content-[''] h-6 w-6 left-1 bottom-1 bg-dirtywhite transition-all duration-300 rounded-full;
+  }
+
+  input:checked + .slider {
+    @apply bg-blue;
+  }
+
+  input:focus + .slider {
+    @apply shadow-[0_0_1px_theme(colors.blue)];
+  }
+
+  input:checked + .slider:before {
+    @apply translate-x-6;
+  }
+
+  /* Form Section Styles */
+  .form-section {
+    @apply space-y-6 max-w-3xl mx-auto bg-white bg-opacity-95 backdrop-blur-sm 
+           rounded-form shadow-form p-6 border border-dirtywhite;
+  }
+
+  .form-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6;
+  }
+
+  .form-field {
+    @apply w-full;
+  }
+
+  .form-field label {
+    @apply block text-medium font-normal text-darkgrey mb-1;
+  }
+
+  .form-field input,
+  .form-field select {
+    @apply mt-1 block w-full rounded-form border-none shadow-form 
+           focus:border-blue focus:ring-blue text-medium
+           bg-mintwhite transition-all duration-200;
+  }
+
+  .form-field textarea {
+    @apply mt-1 block w-full rounded-textarea border-none shadow-form 
+           focus:border-blue focus:ring-blue text-medium
+           bg-mintwhite transition-all duration-200 resize-y;
+  }
+
+  /* List Item Styles */
+  .list-item {
+    @apply py-4 first:pt-0 last:pb-0 hover:bg-mintwhite transition-colors duration-200;
+  }
+
+  .list-item-content {
+    @apply flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4;
+  }
+
+  /* Animation Classes */
+  .fade-enter {
+    @apply transition-opacity duration-200 ease-in-out opacity-0;
+  }
+
+  .fade-enter-active {
+    @apply opacity-100;
+  }
+
+  .fade-exit {
+    @apply transition-opacity duration-200 ease-in-out opacity-100;
+  }
+
+  .fade-exit-active {
+    @apply opacity-0;
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes */
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .transition-fast {
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  .transition-medium {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .transition-slow {
+    @apply transition-all duration-500 ease-in-out;
+  }
+}

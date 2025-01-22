@@ -1,0 +1,255 @@
+@import url(root-color.css);
+@import url(fonts.css);
+
+@media (min-width: 768px) {
+  .container-new {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* margin-top: 2.5rem; */
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 3em 0;
+  }
+
+  .wrap-bg {
+    background-color: #212529;
+    margin: 10px;
+    padding: 30px;
+    border-radius: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.3);
+    /* align-content: flex-start; */
+  }
+
+  .item {
+    margin: 0 1.25rem;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-grow: 1;
+    text-align: center;
+  }
+
+  .item2 {
+    position: relative;
+    right: 170px;
+    top: 50px;
+    z-index: 2;
+  }
+
+  .item3 {
+    position: relative;
+    left: 280px;
+    top: -450px;
+    z-index: 3;
+    margin-bottom: -350px;
+    /*order: 0;
+     position: relative;
+      top: 300px; */
+  }
+
+  .item1 {
+    max-width: 31.25rem;
+    text-align: justify;
+    margin: 2rem;
+    color: white;
+    text-transform: uppercase;
+    /*order: 1;
+     position: absolute;
+      z-index: 2; */
+  }
+
+  img {
+    max-width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    object-fit: cover;
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 50px 0 150px 0;
+  }
+
+  img-small {
+    max-width: 30px;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mobile {
+    display: none;
+  }
+}
+
+/* Hero Mobile  */
+
+@media (max-width: 768px) {
+  .desktop {
+    display: none;
+  }
+  .container-new {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* margin-top: 2.5rem; */
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1em 0;
+  }
+
+  .wrap-bg {
+    background-color: #212529;
+    margin: 5px;
+    padding: 30px;
+    border-radius: 1.5rem 1.5rem 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.5);
+    /* align-content: flex-start; */
+  }
+
+  .item {
+    margin: 0 1.25rem;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    flex-grow: 1;
+    text-align: center;
+  }
+
+  .item1 {
+    max-width: 31.25rem;
+    text-align: justify;
+    margin: 0.5rem;
+    color: white;
+    text-transform: uppercase;
+    z-index: 3;
+    order: 1;
+  }
+
+  .item2 {
+    position: relative;
+    left: 0px;
+    top: 50px;
+    order: 0;
+  }
+
+  .item3 {
+    position: relative;
+    left: 280px;
+    top: -450px;
+    z-index: 3;
+    margin-bottom: -350px;
+    /*order: 0;
+     position: relative;
+      top: 300px; */
+  }
+
+  .img-hero {
+    max-width: 100%;
+    height: 100%;
+    border-radius: 120px 120px 0 0;
+    object-fit: cover;
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.5);
+  }
+
+  img {
+    border-radius: 50px 0 250px 0;
+  }
+
+  img-small {
+    max-width: 30px;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Container to be transferred later */
+
+.container2 {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: var(--mintWhite);
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.img-cover {
+  width: 200px;
+  height: 200px;
+}
+
+.circle-small {
+  flex-grow: 1;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--lightblue);
+}
+
+.text-wrap {
+  max-width: 250px;
+}
+
+.text-content {
+  color: var(--darkgrey);
+  text-align: center;
+}
+
+/* Apia */
+.apia {
+  display: flex;
+  margin: 20px 60px;
+  flex-wrap: wrap;
+  /* gap: 10px; */
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apia-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 100%;
+  flex-grow: 1px;
+}
+
+.apia-item {
+  line-height: auto;
+}
+
+.apia-img {
+  width: 40%;
+  height: auto;
+}
+
+.apia span {
+  font-weight: var(--strong);
+}
+
+.span-style {
+  display: block;
+}
+
+.text-center {
+  text-align: center;
+}
+
+#desktop {
+}
