@@ -1,5 +1,6 @@
 // api.js
 import axios from "axios";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 // Check if we have access token and refresh token in local storage
 const api = axios.create({
@@ -13,7 +14,7 @@ console.log('Base URL:', 'http://localhost:8000/');
 // Add a request interceptor to check if access token exists in local storage
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem(ACCESS_TOKEN);
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -30,54 +31,41 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // If the error is 401 and we haven't tried to refresh the token yet
-        if (error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            try {
-                const refreshToken = localStorage.getItem('refresh_token');
-                if (!refreshToken) {
-                    // No refresh token available, user needs to login again
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    window.location.href = '/login';
-                    return Promise.reject(error);
-                }
-
-                // Try both refresh endpoints
-                let response;
-                try {
-                    // Try dj-rest-auth refresh first
-                    response = await axios.post('http://localhost:8000/api/auth/token/refresh/', {
-                        refresh: refreshToken,
-                    });
-                } catch (refreshError) {
-                    // If that fails, try simple-jwt refresh
-                    response = await axios.post('http://localhost:8000/api/token/refresh/', {
-                        refresh: refreshToken,
-                    });
-                }
-
-                if (response.data.access || response.data.access_token) {
-                    const newToken = response.data.access || response.data.access_token;
-                    localStorage.setItem('access_token', newToken);
-                    
-                    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
-                    
-                    // Retry the original request
-                    return api(originalRequest);
-                }
-            } catch (refreshError) {
-                console.error('Token refresh failed:', refreshError);
-                // Refresh failed, clear tokens and redirect to login
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                window.location.href = '/login';
-            }
+        // If error is not 401 or request already retried, reject
+        if (error.response.status !== 401 || originalRequest._retry) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        originalRequest._retry = true;
+
+        try {
+            const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+            if (!refreshToken) {
+                throw new Error('No refresh token available');
+            }
+
+            const response = await axios.post('http://localhost:8000/api/token/refresh/', {
+                refresh: refreshToken
+            });
+
+            const { access } = response.data;
+
+            // Store new access token
+            localStorage.setItem(ACCESS_TOKEN, access);
+
+            // Update authorization header
+            originalRequest.headers.Authorization = `Bearer ${access}`;
+            api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+
+            // Retry original request
+            return api(originalRequest);
+        } catch (refreshError) {
+            // If refresh fails, clear tokens and reject
+            localStorage.removeItem(ACCESS_TOKEN);
+            localStorage.removeItem(REFRESH_TOKEN);
+            window.location.href = '/login';
+            return Promise.reject(refreshError);
+        }
     }
 );
 
