@@ -1,27 +1,24 @@
 import { useState } from "react";
-import {
-  commonRules,
-  focusField,
-  validateForm,
-} from "../../utils/formValidation";
+import { commonRules, focusField, validateForm } from "../../utils/formValidation";
 import Notification from "../common/Notification";
 import { sharedStyles } from "../../utils/styling";
 
-const Certification = ({ data, onUpdate, onNext, onPrev }) => {
+const Certification = ({ data, updateData }) => {
   const [certifications, setCertifications] = useState(data || []);
   const [currentCertification, setCurrentCertification] = useState({
-    certification_name: "",
-    certification_date: "",
-    certification_link: "",
+    name: "",
+    issuer: "",
+    issueDate: "",
+    expiryDate: "",
+    credentialId: "",
   });
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
 
   const validationRules = {
-    certification_name: { required: true, label: "Certification Name" },
-    certification_date: { required: true, label: "Certification Date" },
-    certification_link: { required: true, label: "Certification Link", type: "url" },
+    name: { required: true, label: "Certification Name" },
+    issuer: { required: true, label: "Issuer" },
+    issueDate: { required: true, label: "Issue Date" },
   };
 
   const handleChange = (e) => {
@@ -44,7 +41,7 @@ const Certification = ({ data, onUpdate, onNext, onPrev }) => {
   const handleAddCertification = (e) => {
     e.preventDefault();
 
-    // Validate current certification
+    // Validate the current certification
     const { errors: validationErrors, firstErrorField } = validateForm(
       currentCertification,
       validationRules
@@ -60,34 +57,39 @@ const Certification = ({ data, onUpdate, onNext, onPrev }) => {
       return;
     }
 
-    const newCertifications = [...certifications, { ...currentCertification, id: Date.now() }];
-    setCertifications(newCertifications);
-    onUpdate(newCertifications);
+    // Add the new certification
+    const updatedCertifications = [...certifications, currentCertification];
+    setCertifications(updatedCertifications);
+    updateData(updatedCertifications, false); // Pass false to prevent auto-navigation
 
-    // Reset form
+    // Reset the form
     setCurrentCertification({
-      certification_name: "",
-      certification_date: "",
-      certification_link: "",
+      name: "",
+      issuer: "",
+      issueDate: "",
+      expiryDate: "",
+      credentialId: "",
     });
+    setErrors({});
     setNotification({
       type: "success",
       message: "Certification added successfully!",
     });
   };
 
-  const handleRemoveCertification = (id) => {
-    const newCertifications = certifications.filter((cert) => cert.id !== id);
-    setCertifications(newCertifications);
-    onUpdate(newCertifications);
+  const handleDeleteCertification = (index) => {
+    const updatedCertifications = certifications.filter((_, i) => i !== index);
+    setCertifications(updatedCertifications);
+    updateData(updatedCertifications, false); // Pass false to prevent auto-navigation
     setNotification({
       type: "success",
-      message: "Certification removed successfully!",
+      message: "Certification deleted successfully!",
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (certifications.length === 0) {
       setNotification({
         type: "error",
@@ -95,12 +97,12 @@ const Certification = ({ data, onUpdate, onNext, onPrev }) => {
       });
       return;
     }
-    onUpdate(certifications);
-    onNext();
-  };
 
-  const toggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+    updateData(certifications, true); // Pass true to allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "Certifications saved successfully!",
+    });
   };
 
   return (
@@ -109,211 +111,188 @@ const Certification = ({ data, onUpdate, onNext, onPrev }) => {
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Certification List</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.experienceCard}>
+          <div className="bg-sky-950 text-white p-4 rounded-t-lg">
+            <h3 className="text-lg font-semibold">Certifications</h3>
           </div>
 
-          <div className="card-body divide-y divide-gray-200">
-            {certifications.length > 0 ? (
-              <div className={sharedStyles.educationList}>
-                {certifications.map((cert) => (
-                  <div key={cert.id} className={sharedStyles.educationCard}>
-                    <div className="relative p-4 flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h4 className={sharedStyles.educationTitle} title={cert.certification_name}>
-                          {cert.certification_name}
-                        </h4>
-                        <p className={sharedStyles.educationSubtitle}>
-                          {new Date(cert.certification_date).toLocaleDateString()}
+          <div className="p-6">
+            {/* List of added certifications */}
+            {certifications.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-lg font-medium mb-4">Added Certifications</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  {certifications.map((cert, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCertification(index)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                      <div>
+                        <h5 className="font-medium">{cert.name}</h5>
+                        <p className="text-sm text-gray-600">
+                          {cert.issuer}
                         </p>
-                        <a
-                          href={cert.certification_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-800 text-sm inline-block mt-1"
-                        >
-                          View Certificate →
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <button
-                          onClick={() => toggleExpand(cert.id)}
-                          className="text-gray-400 hover:text-gray-600 transition-colors"
-                          aria-label={expandedId === cert.id ? "Show less" : "Show more"}
-                        >
-                          <svg
-                            className={`h-5 w-5 transform transition-transform ${
-                              expandedId === cert.id ? "rotate-180" : ""
-                            }`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleRemoveCertification(cert.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                          aria-label="Remove certification"
-                        >
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
+                        <div className="mt-2 text-sm text-gray-500">
+                          <p>Issued: {cert.issueDate}</p>
+                          {cert.expiryDate && (
+                            <p>Expires: {cert.expiryDate}</p>
+                          )}
+                          {cert.credentialId && (
+                            <p>Credential ID: {cert.credentialId}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    {expandedId === cert.id && (
-                      <div className="p-4 bg-gray-50">
-                        <form className="space-y-4">
-                          <div>
-                            <label className={sharedStyles.label}>
-                              Certification Name
-                            </label>
-                            <input
-                              type="text"
-                              value={cert.certification_name}
-                              className={sharedStyles.input}
-                              disabled
-                            />
-                          </div>
-                          <div>
-                            <label className={sharedStyles.label}>
-                              Certification Date
-                            </label>
-                            <input
-                              type="date"
-                              value={cert.certification_date}
-                              className={sharedStyles.input}
-                              disabled
-                            />
-                          </div>
-                          <div>
-                            <label className={sharedStyles.label}>
-                              Certification Link
-                            </label>
-                            <input
-                              type="url"
-                              value={cert.certification_link}
-                              className={sharedStyles.input}
-                              disabled
-                            />
-                          </div>
-                        </form>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-gray-500">
-                No certifications added yet. Add your first certification below.
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </div>
 
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Add New Certification</h3>
-          </div>
+            {/* Add new certification form */}
+            <div className="border-t pt-6">
+              <h4 className="text-lg font-medium mb-4">Add New Certification</h4>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Certification Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={currentCertification.name}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.name ? sharedStyles.errorBorder : ""
+                    }`}
+                    placeholder="e.g., AWS Solutions Architect"
+                  />
+                  {errors.name && (
+                    <p className={sharedStyles.error}>{errors.name[0]}</p>
+                  )}
+                </div>
 
-          <div className="card-body">
-            <form onSubmit={handleAddCertification} className="space-y-4">
-              <div>
-                <label htmlFor="certification_name" className={sharedStyles.label}>
-                  Certification Name
-                </label>
-                <input
-                  type="text"
-                  id="certification_name"
-                  value={currentCertification.certification_name}
-                  onChange={handleChange}
-                  className={`${sharedStyles.input} ${
-                    errors.certification_name ? "border-red-500" : ""
-                  }`}
-                  placeholder="e.g., AWS Solutions Architect"
-                />
-                {errors.certification_name && (
-                  <p className={sharedStyles.errorText}>{errors.certification_name}</p>
-                )}
+                <div>
+                  <label
+                    htmlFor="issuer"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Issuer *
+                  </label>
+                  <input
+                    type="text"
+                    id="issuer"
+                    value={currentCertification.issuer}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.issuer ? sharedStyles.errorBorder : ""
+                    }`}
+                    placeholder="e.g., Amazon Web Services"
+                  />
+                  {errors.issuer && (
+                    <p className={sharedStyles.error}>{errors.issuer[0]}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="issueDate"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Issue Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="issueDate"
+                    value={currentCertification.issueDate}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.issueDate ? sharedStyles.errorBorder : ""
+                    }`}
+                  />
+                  {errors.issueDate && (
+                    <p className={sharedStyles.error}>{errors.issueDate[0]}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="expiryDate"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Expiry Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    id="expiryDate"
+                    value={currentCertification.expiryDate}
+                    onChange={handleChange}
+                    className={sharedStyles.inputStyle}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="credentialId"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Credential ID (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    id="credentialId"
+                    value={currentCertification.credentialId}
+                    onChange={handleChange}
+                    className={sharedStyles.inputStyle}
+                    placeholder="e.g., ABC123XYZ"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="certification_date" className={sharedStyles.label}>
-                  Certification Date
-                </label>
-                <input
-                  type="date"
-                  id="certification_date"
-                  value={currentCertification.certification_date}
-                  onChange={handleChange}
-                  className={`${sharedStyles.input} ${
-                    errors.certification_date ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.certification_date && (
-                  <p className={sharedStyles.errorText}>{errors.certification_date}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="certification_link" className={sharedStyles.label}>
-                  Certification Link
-                </label>
-                <input
-                  type="url"
-                  id="certification_link"
-                  value={currentCertification.certification_link}
-                  onChange={handleChange}
-                  className={`${sharedStyles.input} ${
-                    errors.certification_link ? "border-red-500" : ""
-                  }`}
-                  placeholder="https://example.com/certification"
-                />
-                {errors.certification_link && (
-                  <p className={sharedStyles.errorText}>{errors.certification_link}</p>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <button type="submit" className={sharedStyles.buttonPrimary}>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={handleAddCertification}
+                  className={sharedStyles.buttonSuccess}
+                >
                   Add Certification
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between">
-          <button onClick={onPrev} className={sharedStyles.buttonSecondary}>
-            Previous
-          </button>
+        <div className="flex justify-end space-x-4">
           <button
-            onClick={handleSubmit}
-            className={sharedStyles.buttonSuccess}
+            type="submit"
+            className={sharedStyles.buttonPrimary}
           >
-            Next
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

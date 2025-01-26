@@ -1,219 +1,209 @@
-import { useState } from "react";
-import Education from "./Education";
-import Experience from "./Experience";
-import Language from "./Language";
+import React, { useState } from "react";
+import styled from "styled-components";
 import PersonalInfo from "./PersonalInfo";
-import Skills from "./Skills";
 import ProfessionalSummary from "./ProfessionalSummary";
+import Experience from "./Experience";
+import Education from "./Education";
+import Skills from "./Skills";
+import Language from "./Language";
 import Reference from "./Reference";
 import SocialMedia from "./SocialMedia";
 import Certification from "./Certification";
 import Interests from "./Interests";
 
+const FormContainer = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+`;
+
+const Navigation = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+`;
+
+const Button = styled.button`
+  background-color: #4F46E5;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+
+  &:hover {
+    background-color: #4338CA;
+  }
+
+  &:disabled {
+    background-color: #9CA3AF;
+    cursor: not-allowed;
+  }
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 4px;
+  background-color: #E5E7EB;
+  margin: 20px 0;
+  border-radius: 2px;
+`;
+
+const Progress = styled.div`
+  width: ${props => (props.step / props.total) * 100}%;
+  height: 100%;
+  background-color: #4F46E5;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+`;
+
 const CVFormContainer = ({ onCVCreated }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     personalInfo: {},
+    professionalSummary: "",
     experience: [],
     education: [],
-    professionalSummary: "",
     skills: [],
-    interest: [],
-    certification: [],
     language: [],
+    certification: [],
+    interests: [],
     reference: [],
     socialMedia: [],
   });
 
-  const nextStep = () => setStep(step + 1);
-  const prevStep = () => setStep(step - 1);
+  const steps = [
+    { 
+      id: 1, 
+      component: PersonalInfo, 
+      title: "Personal Information",
+      key: "personalInfo",
+      validate: (data) => {
+        const required = ['first_name', 'last_name', 'email'];
+        return required.every(field => data[field] && data[field].trim() !== '');
+      }
+    },
+    { 
+      id: 2, 
+      component: ProfessionalSummary, 
+      title: "Professional Summary",
+      key: "professionalSummary",
+      validate: (data) => data && data.trim() !== ''
+    },
+    { 
+      id: 3, 
+      component: Experience, 
+      title: "Experience",
+      key: "experience",
+      validate: () => true
+    },
+    { 
+      id: 4, 
+      component: Education, 
+      title: "Education",
+      key: "education",
+      validate: () => true
+    },
+    { 
+      id: 5, 
+      component: Skills, 
+      title: "Skills",
+      key: "skills",
+      validate: () => true
+    },
+    { 
+      id: 6, 
+      component: Language, 
+      title: "Languages",
+      key: "language",
+      validate: () => true
+    },
+    { 
+      id: 7, 
+      component: Certification, 
+      title: "Certifications",
+      key: "certification",
+      validate: () => true
+    },
+    { 
+      id: 8, 
+      component: Interests, 
+      title: "Interests",
+      key: "interests",
+      validate: () => true
+    },
+    { 
+      id: 9, 
+      component: Reference, 
+      title: "References",
+      key: "reference",
+      validate: () => true
+    },
+    { 
+      id: 10, 
+      component: SocialMedia, 
+      title: "Social Media",
+      key: "socialMedia",
+      validate: () => true
+    }
+  ];
 
-  const updateFormData = (key, value) => {
-    setFormData((prev) => ({
+  const handleUpdateData = (key, value) => {
+    setFormData(prev => ({
       ...prev,
-      [key]: value,
+      [key]: value
     }));
   };
 
+  const handleNextStep = () => {
+    const currentStepData = formData[steps[step - 1].key];
+    if (steps[step - 1].validate(currentStepData)) {
+      setStep(prev => Math.min(prev + 1, steps.length));
+    }
+  };
+
+  const handlePrevStep = () => {
+    setStep(prev => Math.max(prev - 1, 1));
+  };
+
   const handleFormCompletion = async () => {
-    // Validate required personal info
-    const requiredFields = ["first_name", "last_name", "contact_number"];
-    const missingFields = requiredFields.filter(
-      (field) => !formData.personalInfo[field]
-    );
-
-    if (missingFields.length > 0) {
-      console.error("Missing required fields:", missingFields);
-      return;
-    }
-
-    const formattedData = {
-      // Personal Info
-      first_name: formData.personalInfo.first_name,
-      last_name: formData.personalInfo.last_name,
-      email: formData.personalInfo.email || "",
-      address: formData.personalInfo.address || "",
-      city: formData.personalInfo.city || "",
-      country: formData.personalInfo.country || "",
-      contact_number: formData.personalInfo.contact_number,
-      interest: formData.interest || [],
-      additional_information: formData.personalInfo.additionalInfo || "",
-
-      // Related objects
-      education: (formData.education || []).map((edu) => ({
-        school_name: edu.school_name,
-        degree: edu.degree,
-        field_of_study: edu.field_of_study,
-        start_date: edu.start_date,
-        end_date: edu.end_date,
-        current: edu.current || false,
-      })),
-
-      experience: (formData.experience || []).map((exp) => ({
-        job_title: exp.job_title,
-        company_name: exp.company_name,
-        start_date: exp.start_date,
-        end_date: exp.end_date,
-        current: exp.current || false,
-        description: exp.description,
-      })),
-
-      skill: (formData.skills || []).map((skill) => ({
-        name: skill.name,
-      })),
-
-      language: (formData.language || []).map((lang) => ({
-        name: lang.name,
-      })),
-
-      reference: (formData.reference || []).map((ref) => ({
-        name: ref.name,
-        title: ref.title,
-        company: ref.company,
-        reference_type: ref.type,
-        email: ref.email,
-        phone: ref.phone,
-      })),
-
-      socialMedia: (formData.socialMedia || []).map((social) => ({
-        platform: social.platform,
-        url: social.url,
-      })),
-
-      professionalSummary: [
-        {
-          summary: formData.professionalSummary || "",
-        },
-      ],
-
-      certification: (formData.certification || []).map((cert) => ({
-        certification_name: cert.certification_name,
-        certification_date: cert.certification_date,
-        certification_link: cert.certification_link,
-      })),
-    };
-
-    console.log("Submitting formatted CV data:", formattedData);
-    onCVCreated(formattedData);
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <PersonalInfo
-            data={formData.personalInfo}
-            onUpdate={(data) => updateFormData("personalInfo", data)}
-            onNext={nextStep}
-          />
-        );
-      case 2:
-        return (
-          <ProfessionalSummary
-            data={formData.professionalSummary}
-            onUpdate={(data) => updateFormData("professionalSummary", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 3:
-        return (
-          <Education
-            data={formData.education}
-            onUpdate={(data) => updateFormData("education", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 4:
-        return (
-          <Experience
-            data={formData.experience}
-            onUpdate={(data) => updateFormData("experience", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 5:
-        return (
-          <Skills
-            data={formData.skills}
-            onUpdate={(data) => updateFormData("skills", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 6:
-        return (
-          <Interests
-            data={formData.interest}
-            onUpdate={(data) => updateFormData("interest", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 7:
-        return (
-          <Certification
-            data={formData.certification}
-            onUpdate={(data) => updateFormData("certification", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 8:
-        return (
-          <Language
-            data={formData.language}
-            onUpdate={(data) => updateFormData("language", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 9:
-        return (
-          <Reference
-            data={formData.reference}
-            onUpdate={(data) => updateFormData("reference", data)}
-            onNext={nextStep}
-            onPrev={prevStep}
-          />
-        );
-      case 10:
-        return (
-          <SocialMedia
-            data={formData.socialMedia}
-            onUpdate={(data) => updateFormData("socialMedia", data)}
-            onNext={handleFormCompletion}
-            onPrev={prevStep}
-          />
-        );
-      default:
-        return null;
+    try {
+      await onCVCreated(formData);
+    } catch (error) {
+      console.error("Error creating CV:", error);
     }
   };
 
-  return <div className="container mx-auto px-4 py-8">{renderStep()}</div>;
+  const CurrentStepComponent = steps[step - 1].component;
+
+  return (
+    <FormContainer>
+      <ProgressBar>
+        <Progress step={step} total={steps.length} />
+      </ProgressBar>
+
+      <CurrentStepComponent
+        data={formData[steps[step - 1].key]}
+        updateData={handleUpdateData}
+      />
+
+      <Navigation>
+        <Button 
+          onClick={handlePrevStep} 
+          disabled={step === 1}
+        >
+          Previous
+        </Button>
+        <Button 
+          onClick={step === steps.length ? handleFormCompletion : handleNextStep}
+          disabled={step === 1}
+        >
+          {step === steps.length ? 'Finish' : 'Next'}
+        </Button>
+      </Navigation>
+    </FormContainer>
+  );
 };
 
 export default CVFormContainer;

@@ -1,27 +1,43 @@
 import { useState } from "react";
-import { SKILL_CATEGORIES } from "../../utils/constants";
-import { sharedStyles } from "../../utils/styling";
+import { commonRules, focusField, validateForm } from "../../utils/formValidation";
 import Notification from "../common/Notification";
+import { sharedStyles } from "../../utils/styling";
+import { SKILL_CATEGORIES } from "../../utils/constants";
 
-const Skills = ({ data, onUpdate, onNext, onPrev }) => {
+const Skills = ({ data, updateData }) => {
   const [skills, setSkills] = useState(data || []);
   const [currentSkill, setCurrentSkill] = useState({
     name: "",
-    category: "",
-    proficiency: 3, // 1-5 scale
+    proficiency: "Intermediate",
     isCustom: false,
   });
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const proficiencyLevels = [
-    { value: 1, label: "Beginner" },
-    { value: 2, label: "Elementary" },
-    { value: 3, label: "Intermediate" },
-    { value: 4, label: "Advanced" },
-    { value: 5, label: "Expert" },
-  ];
+  const validationRules = {
+    name: { required: true, label: "Skill Name" },
+    proficiency: { required: true, label: "Proficiency Level" },
+  };
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setCurrentSkill((prev) => ({
+      ...prev,
+      [id]: value,
+      isCustom: true,
+    }));
+
+    // Clear error for the field being edited
+    if (errors[id]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
+    }
+  };
 
   const handleAddSkill = (skillName = currentSkill.name) => {
     if (!skillName.trim()) {
@@ -32,7 +48,8 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
       return;
     }
 
-    if (skills.some((s) => s.name.toLowerCase() === skillName.toLowerCase())) {
+    // Check if skill already exists
+    if (skills.some((skill) => skill.name.toLowerCase() === skillName.toLowerCase())) {
       setNotification({
         type: "error",
         message: "This skill has already been added",
@@ -40,37 +57,44 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
       return;
     }
 
+    // Add the new skill
     const newSkill = {
-      id: Date.now(),
       name: skillName,
-      category: currentSkill.category || selectedCategory || "Other",
       proficiency: currentSkill.proficiency,
+      category: selectedCategory || "Other",
       isCustom: currentSkill.isCustom,
     };
 
-    setSkills((prev) => [...prev, newSkill]);
+    const updatedSkills = [...skills, newSkill];
+    setSkills(updatedSkills);
+    updateData(updatedSkills, false); // Pass false to prevent auto-navigation
+
+    // Reset the form
     setCurrentSkill({
       name: "",
-      category: selectedCategory,
-      proficiency: 3,
+      proficiency: "Intermediate",
       isCustom: false,
     });
+    setErrors({});
     setNotification({
       type: "success",
       message: "Skill added successfully!",
     });
   };
 
-  const handleRemoveSkill = (id) => {
-    setSkills((prev) => prev.filter((skill) => skill.id !== id));
+  const handleDeleteSkill = (index) => {
+    const updatedSkills = skills.filter((_, i) => i !== index);
+    setSkills(updatedSkills);
+    updateData(updatedSkills, false); // Pass false to prevent auto-navigation
     setNotification({
       type: "success",
-      message: "Skill removed successfully!",
+      message: "Skill deleted successfully!",
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (skills.length === 0) {
       setNotification({
         type: "error",
@@ -78,8 +102,12 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
       });
       return;
     }
-    onUpdate(skills);
-    onNext();
+
+    updateData(skills, true); // Pass true to allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "Skills saved successfully!",
+    });
   };
 
   const filteredSkills = SKILL_CATEGORIES.reduce((acc, category) => {
@@ -97,61 +125,46 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
     return acc;
   }, []);
 
+  const proficiencyLevels = [
+    "Beginner",
+    "Intermediate",
+    "Advanced",
+    "Expert",
+  ];
+
   return (
     <div className="w-full px-4 sm:px-6 md:px-8 py-6">
       {notification && (
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Skills</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.experienceCard}>
+          <div className="bg-sky-950 text-white p-4 rounded-t-lg">
+            <h3 className="text-lg font-semibold">Skills</h3>
           </div>
 
-          <div className="card-body">
-            <div className="space-y-6">
-              {/* Skills List */}
-              {skills.length > 0 && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {skills.map((skill) => (
+          <div className="p-6">
+            {/* List of added skills */}
+            {skills.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-lg font-medium mb-4">Added Skills</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {skills.map((skill, index) => (
                     <div
-                      key={skill.id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                      key={index}
+                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
                     >
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {skill.name}
-                        </h4>
-                        <div className="mt-1 flex items-center">
-                          <div className="flex-1">
-                            <div className="h-2 bg-gray-200 rounded-full">
-                              <div
-                                className="h-2 bg-blue-600 rounded-full"
-                                style={{
-                                  width: `${(skill.proficiency / 5) * 100}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <span className="ml-2 text-xs text-gray-500">
-                            {
-                              proficiencyLevels.find(
-                                (l) => l.value === skill.proficiency
-                              )?.label
-                            }
-                          </span>
-                        </div>
-                      </div>
                       <button
-                        onClick={() => handleRemoveSkill(skill.id)}
-                        className="ml-4 text-gray-400 hover:text-red-500"
+                        type="button"
+                        onClick={() => handleDeleteSkill(index)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                       >
                         <svg
-                          className="h-5 w-5"
+                          className="w-5 h-5"
                           fill="none"
-                          viewBox="0 0 24 24"
                           stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
                           <path
                             strokeLinecap="round"
@@ -161,135 +174,171 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
                           />
                         </svg>
                       </button>
+                      <div>
+                        <h5 className="font-medium">{skill.name}</h5>
+                        <p className="text-sm text-gray-600">
+                          {skill.proficiency}
+                        </p>
+                        {skill.category && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {skill.category}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Search and Filter */}
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className={sharedStyles.inputStyle}
+                  >
+                    <option value="">All Categories</option>
+                    {SKILL_CATEGORIES.map((category) => (
+                      <option key={category.name} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex-1">
+                  <label
+                    htmlFor="search"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Search Skills
+                  </label>
+                  <input
+                    type="text"
+                    id="search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={sharedStyles.inputStyle}
+                    placeholder="Search for skills..."
+                  />
+                </div>
+              </div>
+
+              {/* Skill Suggestions */}
+              {filteredSkills.length > 0 && (
+                <div className="border rounded-lg divide-y">
+                  {filteredSkills.map((category) => (
+                    <div key={category.name} className="p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        {category.name}
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {category.skills.map((skill) => (
+                          <button
+                            key={skill}
+                            type="button"
+                            onClick={() => {
+                              setCurrentSkill((prev) => ({
+                                ...prev,
+                                name: skill,
+                                isCustom: false,
+                              }));
+                              handleAddSkill(skill);
+                            }}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              />
+                            </svg>
+                            {skill}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Add Skills Form */}
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <label htmlFor="category" className="form-label">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className={sharedStyles.inputStyle}
+              {/* Custom Skill Input */}
+              <div className="border-t pt-4">
+                <h4 className="text-lg font-medium mb-4">Add Custom Skill</h4>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-gray-700"
                     >
-                      <option value="">All Categories</option>
-                      {SKILL_CATEGORIES.map((category) => (
-                        <option key={category.name} value={category.name}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex-1">
-                    <label htmlFor="search" className="form-label">
-                      Search Skills
+                      Skill Name *
                     </label>
                     <input
                       type="text"
-                      id="search"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={sharedStyles.inputStyle}
-                      placeholder="Search for skills..."
+                      id="name"
+                      value={currentSkill.name}
+                      onChange={handleChange}
+                      className={`${sharedStyles.inputStyle} ${
+                        errors.name ? sharedStyles.errorBorder : ""
+                      }`}
+                      placeholder="e.g., Project Management"
                     />
+                    {errors.name && (
+                      <p className={sharedStyles.error}>{errors.name[0]}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="proficiency"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Proficiency Level *
+                    </label>
+                    <select
+                      id="proficiency"
+                      value={currentSkill.proficiency}
+                      onChange={handleChange}
+                      className={`${sharedStyles.inputStyle} ${
+                        errors.proficiency ? sharedStyles.errorBorder : ""
+                      }`}
+                    >
+                      {proficiencyLevels.map((level) => (
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.proficiency && (
+                      <p className={sharedStyles.error}>
+                        {errors.proficiency[0]}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Skill Suggestions */}
-                {filteredSkills.length > 0 && (
-                  <div className="border rounded-lg divide-y">
-                    {filteredSkills.map((category) => (
-                      <div key={category.name} className="p-4">
-                        <h4 className="font-medium text-gray-900 mb-2">
-                          {category.name}
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {category.skills.map((skill) => (
-                            <button
-                              key={skill}
-                              onClick={() => handleAddSkill(skill)}
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                />
-                              </svg>
-                              {skill}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Custom Skill Input */}
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <label htmlFor="customSkill" className="form-label">
-                        Custom Skill
-                      </label>
-                      <input
-                        type="text"
-                        id="customSkill"
-                        value={currentSkill.name}
-                        onChange={(e) =>
-                          setCurrentSkill((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                            isCustom: true,
-                          }))
-                        }
-                        className={sharedStyles.inputStyle}
-                        placeholder="Enter a custom skill..."
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label htmlFor="proficiency" className="form-label">
-                        Proficiency
-                      </label>
-                      <select
-                        id="proficiency"
-                        value={currentSkill.proficiency}
-                        onChange={(e) =>
-                          setCurrentSkill((prev) => ({
-                            ...prev,
-                            proficiency: Number(e.target.value),
-                          }))
-                        }
-                        className={sharedStyles.inputStyle}
-                      >
-                        {proficiencyLevels.map((level) => (
-                          <option key={level.value} value={level.value}>
-                            {level.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
+                <div className="mt-4">
                   <button
                     type="button"
                     onClick={() => handleAddSkill()}
-                    className={`${sharedStyles.buttonSuccess} w-full`}
+                    className={sharedStyles.buttonSuccess}
                   >
                     Add Custom Skill
                   </button>
@@ -301,21 +350,13 @@ const Skills = ({ data, onUpdate, onNext, onPrev }) => {
 
         <div className="flex justify-end space-x-4">
           <button
-            type="button"
-            onClick={onPrev}
-            className={sharedStyles.buttonSecondary}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             className={sharedStyles.buttonPrimary}
           >
-            Next
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

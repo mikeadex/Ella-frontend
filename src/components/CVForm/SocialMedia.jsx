@@ -3,7 +3,7 @@ import { SOCIAL_MEDIA_PLATFORMS } from "../../utils/constants";
 import { sharedStyles } from "../../utils/styling";
 import Notification from "../common/Notification";
 
-const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
+const SocialMedia = ({ data, updateData }) => {
   const [profiles, setProfiles] = useState(data || {});
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
@@ -27,6 +27,9 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
       ...prev,
       [platform]: value,
     }));
+
+    // Update data without navigation when typing
+    updateData({ ...profiles, [platform]: value }, false);
 
     if (value && !validateUrl(value, platformConfig?.pattern)) {
       setErrors((prev) => ({
@@ -71,8 +74,11 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
         url: url.trim()
       }));
 
-    onUpdate(formattedProfiles);
-    onNext();
+    updateData(formattedProfiles, true); // Allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "Social media profiles saved successfully!",
+    });
   };
 
   return (
@@ -81,13 +87,13 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Social Media</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.card}>
+          <div className={sharedStyles.cardHeader}>
+            <h3 className="text-lg font-semibold">Social Media</h3>
           </div>
 
-          <div className="card-body">
+          <div className={sharedStyles.cardBody}>
             <p className="text-sm text-gray-600 mb-6">
               Add your social media profiles to enhance your CV. Leave fields empty
               for platforms you don't want to include.
@@ -96,7 +102,7 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
             <div className="grid gap-6 sm:grid-cols-2">
               {SOCIAL_MEDIA_PLATFORMS.map((platform) => (
                 <div key={platform.name}>
-                  <label htmlFor={platform.name} className="form-label">
+                  <label htmlFor={platform.name} className="block text-sm font-medium text-gray-700">
                     {platform.name}
                   </label>
                   <div className="relative">
@@ -134,17 +140,13 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
                         handleUrlChange(platform.name, e.target.value)
                       }
                       placeholder={platform.placeholder}
-                      className={`${
-                        sharedStyles.inputStyle
-                      } pl-10 ${
-                        errors[platform.name] ? "border-red-500" : ""
+                      className={`${sharedStyles.inputStyle} pl-10 ${
+                        errors[platform.name] ? sharedStyles.errorBorder : ""
                       }`}
                     />
                   </div>
                   {errors[platform.name] && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors[platform.name]}
-                    </p>
+                    <p className={sharedStyles.error}>{errors[platform.name]}</p>
                   )}
                 </div>
               ))}
@@ -152,23 +154,15 @@ const SocialMedia = ({ data, onUpdate, onNext, onPrev }) => {
           </div>
         </div>
 
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-end space-x-4">
           <button
-            type="button"
-            onClick={onPrev}
-            className={sharedStyles.buttonSecondary}
+            type="submit"
+            className={sharedStyles.buttonPrimary}
           >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className={sharedStyles.buttonSuccess}
-          >
-            Create CV
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

@@ -1,28 +1,60 @@
 import { useState } from "react";
-import { LANGUAGES, LANGUAGE_PROFICIENCY } from "../../utils/constants";
-import { sharedStyles } from "../../utils/styling";
+import { commonRules, focusField, validateForm } from "../../utils/formValidation";
 import Notification from "../common/Notification";
+import { sharedStyles } from "../../utils/styling";
 
-const Language = ({ data, onUpdate, onNext, onPrev }) => {
+const Language = ({ data, updateData }) => {
   const [languages, setLanguages] = useState(data || []);
   const [currentLanguage, setCurrentLanguage] = useState({
     name: "",
-    proficiency: "intermediate",
-    isCustom: false,
+    proficiency: "Intermediate",
   });
-  const [searchTerm, setSearchTerm] = useState("");
+  const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
 
-  const handleAddLanguage = () => {
-    if (!currentLanguage.name) {
+  const validationRules = {
+    name: { required: true, label: "Language Name" },
+    proficiency: { required: true, label: "Proficiency Level" },
+  };
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setCurrentLanguage((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+
+    // Clear error for the field being edited
+    if (errors[id]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleAddLanguage = (e) => {
+    e.preventDefault();
+
+    // Validate the current language
+    const { errors: validationErrors, firstErrorField } = validateForm(
+      currentLanguage,
+      validationRules
+    );
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       setNotification({
         type: "error",
-        message: "Please select a language",
+        message: validationErrors[firstErrorField][0],
       });
+      focusField(firstErrorField);
       return;
     }
 
-    if (languages.some((l) => l.name.toLowerCase() === currentLanguage.name.toLowerCase())) {
+    // Check if language already exists
+    if (languages.some((lang) => lang.name.toLowerCase() === currentLanguage.name.toLowerCase())) {
       setNotification({
         type: "error",
         message: "This language has already been added",
@@ -30,59 +62,57 @@ const Language = ({ data, onUpdate, onNext, onPrev }) => {
       return;
     }
 
-    const newLanguage = {
-      id: Date.now(),
-      name: currentLanguage.name,
-      proficiency: currentLanguage.proficiency,
-      isCustom: currentLanguage.isCustom,
-    };
+    // Add the new language
+    const updatedLanguages = [...languages, currentLanguage];
+    setLanguages(updatedLanguages);
+    updateData(updatedLanguages, false); // Pass false to prevent auto-navigation
 
-    setLanguages((prev) => [...prev, newLanguage]);
+    // Reset the form
     setCurrentLanguage({
       name: "",
-      proficiency: "intermediate",
-      isCustom: false,
+      proficiency: "Intermediate",
     });
+    setErrors({});
     setNotification({
       type: "success",
       message: "Language added successfully!",
     });
   };
 
-  const handleRemoveLanguage = (id) => {
-    setLanguages((prev) => prev.filter((lang) => lang.id !== id));
+  const handleDeleteLanguage = (index) => {
+    const updatedLanguages = languages.filter((_, i) => i !== index);
+    setLanguages(updatedLanguages);
+    updateData(updatedLanguages, false); // Pass false to prevent auto-navigation
     setNotification({
       type: "success",
-      message: "Language removed successfully!",
+      message: "Language deleted successfully!",
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate(languages);
-    onNext();
-  };
 
-  const filteredLanguages = LANGUAGES.filter((lang) =>
-    lang.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getProficiencyColor = (proficiency) => {
-    switch (proficiency) {
-      case "native":
-        return "bg-green-500";
-      case "fluent":
-        return "bg-blue-500";
-      case "advanced":
-        return "bg-indigo-500";
-      case "intermediate":
-        return "bg-yellow-500";
-      case "basic":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
+    if (languages.length === 0) {
+      setNotification({
+        type: "error",
+        message: "Please add at least one language",
+      });
+      return;
     }
+
+    updateData(languages, true); // Pass true to allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "Languages saved successfully!",
+    });
   };
+
+  const proficiencyLevels = [
+    "Beginner",
+    "Intermediate",
+    "Advanced",
+    "Native/Bilingual",
+  ];
 
   return (
     <div className="w-full px-4 sm:px-6 md:px-8 py-6">
@@ -90,67 +120,33 @@ const Language = ({ data, onUpdate, onNext, onPrev }) => {
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Languages</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.experienceCard}>
+          <div className="bg-sky-950 text-white p-4 rounded-t-lg">
+            <h3 className="text-lg font-semibold">Languages</h3>
           </div>
 
-          <div className="card-body">
-            {/* Language List */}
+          <div className="p-6">
+            {/* List of added languages */}
             {languages.length > 0 && (
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Your Languages
-                </h4>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {languages.map((lang) => (
+                <h4 className="text-lg font-medium mb-4">Added Languages</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {languages.map((language, index) => (
                     <div
-                      key={lang.id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
+                      key={index}
+                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
                     >
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {lang.name}
-                        </h4>
-                        <div className="mt-1 flex items-center">
-                          <div className="flex-1">
-                            <div className="h-2 bg-gray-200 rounded-full">
-                              <div
-                                className={`h-2 rounded-full ${getProficiencyColor(
-                                  lang.proficiency
-                                )}`}
-                                style={{
-                                  width: `${
-                                    ((LANGUAGE_PROFICIENCY.findIndex(
-                                      (p) => p.value === lang.proficiency
-                                    ) +
-                                      1) /
-                                      LANGUAGE_PROFICIENCY.length) *
-                                    100
-                                  }%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                          <span className="ml-2 text-xs text-gray-500">
-                            {
-                              LANGUAGE_PROFICIENCY.find(
-                                (p) => p.value === lang.proficiency
-                              )?.label
-                            }
-                          </span>
-                        </div>
-                      </div>
                       <button
-                        onClick={() => handleRemoveLanguage(lang.id)}
-                        className="ml-4 text-gray-400 hover:text-red-500"
+                        type="button"
+                        onClick={() => handleDeleteLanguage(index)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                       >
                         <svg
-                          className="h-5 w-5"
+                          className="w-5 h-5"
                           fill="none"
-                          viewBox="0 0 24 24"
                           stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
                           <path
                             strokeLinecap="round"
@@ -160,111 +156,95 @@ const Language = ({ data, onUpdate, onNext, onPrev }) => {
                           />
                         </svg>
                       </button>
+                      <div>
+                        <h5 className="font-medium">{language.name}</h5>
+                        <p className="text-sm text-gray-600">
+                          {language.proficiency}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Add Language Form */}
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label htmlFor="language" className="form-label">
-                    Language
+            {/* Add new language form */}
+            <div className="border-t pt-6">
+              <h4 className="text-lg font-medium mb-4">Add New Language</h4>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Language Name *
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="language"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={sharedStyles.inputStyle}
-                      placeholder="Search for a language..."
-                      autoComplete="off"
-                    />
-                    {searchTerm && filteredLanguages.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-60 overflow-auto">
-                        {filteredLanguages.map((lang) => (
-                          <button
-                            key={lang}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                            onClick={() => {
-                              setCurrentLanguage((prev) => ({
-                                ...prev,
-                                name: lang,
-                              }));
-                              setSearchTerm("");
-                            }}
-                          >
-                            {lang}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    id="name"
+                    value={currentLanguage.name}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.name ? sharedStyles.errorBorder : ""
+                    }`}
+                    placeholder="e.g., English, Spanish, French"
+                  />
+                  {errors.name && (
+                    <p className={sharedStyles.error}>{errors.name[0]}</p>
+                  )}
                 </div>
 
-                <div className="flex-1">
-                  <label htmlFor="proficiency" className="form-label">
-                    Proficiency
+                <div>
+                  <label
+                    htmlFor="proficiency"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Proficiency Level *
                   </label>
                   <select
                     id="proficiency"
                     value={currentLanguage.proficiency}
-                    onChange={(e) =>
-                      setCurrentLanguage((prev) => ({
-                        ...prev,
-                        proficiency: e.target.value,
-                      }))
-                    }
-                    className={sharedStyles.inputStyle}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.proficiency ? sharedStyles.errorBorder : ""
+                    }`}
                   >
-                    {LANGUAGE_PROFICIENCY.map((level) => (
-                      <option key={level.value} value={level.value}>
-                        {level.label} - {level.description}
+                    {proficiencyLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
                       </option>
                     ))}
                   </select>
+                  {errors.proficiency && (
+                    <p className={sharedStyles.error}>
+                      {errors.proficiency[0]}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Custom Language Input */}
-              {!filteredLanguages.includes(currentLanguage.name) &&
-                currentLanguage.name && (
-                  <div className="text-sm text-gray-500">
-                    Custom language: "{currentLanguage.name}"
-                  </div>
-                )}
-
-              <button
-                type="button"
-                onClick={handleAddLanguage}
-                className={`${sharedStyles.buttonSuccess} w-full`}
-              >
-                Add Language
-              </button>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={handleAddLanguage}
+                  className={sharedStyles.buttonSuccess}
+                >
+                  Add Language
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex justify-end space-x-4">
           <button
-            type="button"
-            onClick={onPrev}
-            className={sharedStyles.buttonSecondary}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             className={sharedStyles.buttonPrimary}
           >
-            Next
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

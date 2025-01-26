@@ -1,0 +1,205 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap");
+
+:root {
+  /* Color Scheme */
+  --primary-color: #1a1a1a;
+  --secondary-color: #2d2d2d;
+  --accent-color: #2563eb;
+  --accent-light: #60a5fa;
+  --background-color: #ffffff;
+  --surface-color: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-light: #64748b;
+
+  /* Typography */
+  --font-primary: "Outfit", sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+  --spacing-2xl: 40px;
+
+  /* Effects */
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --box-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --box-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  line-height: 1.6;
+  color: var(--primary-color);
+  background-color: var(--surface-color);
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+.resume-content {
+  display: flex;
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
+}
+
+.sidebar {
+  width: 30%;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex: 1;
+}
+
+/* Section Header Styles */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.add-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  color: var(--accent-color);
+  opacity: 0.8;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-shadow: none;
+}
+
+.add-button:hover {
+  opacity: 1;
+  border: none;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--spacing-md) 0;
+  border: none;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: var(--spacing-lg);
+  }
+
+  .resume-content {
+    gap: var(--spacing-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+
+  .resume-content {
+    flex-direction: column;
+  }
+
+  /* Main content first */
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    order: 1;
+  }
+
+  /* Professional Summary first within main content */
+  .summary-section {
+    order: 1;
+  }
+
+  /* Work Experience second within main content */
+  .experience-section {
+    order: 2;
+  }
+
+  /* Sidebar comes after main content */
+  .sidebar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    order: 2;
+  }
+
+  /* Education first in sidebar */
+  .education-section {
+    order: 1;
+  }
+
+  /* Contact info second in sidebar */
+  .contact-section {
+    order: 3;
+  }
+
+  /* Skills last in sidebar */
+  .skills-section {
+    order: 2;
+  }
+
+  /* Add spacing between sections */
+  .sidebar > div,
+  .main-content > div {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .sidebar > div:last-child,
+  .main-content > div:last-child {
+    margin-bottom: 0;
+  }
+}
+button {
+  border-radius: var(--border-radius-md);
+  border: 1px solid transparent;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 1em;
+  font-weight: 500;
+  font-family: var(--font-primary);
+  background-color: var(--primary-color);
+  cursor: pointer;
+  transition: border-color 0.25s;
+  box-shadow: var(--box-shadow);
+}
+button:hover {
+  border-color: var(--accent-color);
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --primary-color: #213547;
+    --background-color: #ffffff;
+  }
+  a:hover {
+    color: var(--accent-light);
+  }
+  button {
+    background-color: var(--surface-color);
+  }
+}

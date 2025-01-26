@@ -3,7 +3,7 @@ import { REFERENCE_TYPES } from "../../utils/constants";
 import { sharedStyles } from "../../utils/styling";
 import Notification from "../common/Notification";
 
-const Reference = ({ data, onUpdate, onNext, onPrev }) => {
+const Reference = ({ data, updateData }) => {
   const [references, setReferences] = useState(data || []);
   const [currentReference, setCurrentReference] = useState({
     name: "",
@@ -59,11 +59,12 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
       company: currentReference.company.trim(),
       email: currentReference.email.trim(),
       phone: currentReference.phone.trim(),
-      type: currentReference.type,
+      reference_type: currentReference.type,
     };
 
-    console.log("Adding new reference:", newReference);
-    setReferences((prev) => [...prev, newReference]);
+    const updatedReferences = [...references, newReference];
+    setReferences(updatedReferences);
+    updateData(updatedReferences, false); // Pass false to prevent auto-navigation
 
     setCurrentReference({
       name: "",
@@ -82,7 +83,9 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
   };
 
   const handleRemoveReference = (id) => {
-    setReferences((prev) => prev.filter((ref) => ref.id !== id));
+    const updatedReferences = references.filter((ref) => ref.id !== id);
+    setReferences(updatedReferences);
+    updateData(updatedReferences, false); // Pass false to prevent auto-navigation
     setNotification({
       type: "success",
       message: "Reference removed successfully!",
@@ -92,16 +95,24 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (references.length === 0) {
+      setNotification({
+        type: "error",
+        message: "Please add at least one reference",
+      });
+      return;
+    }
+
     // Ensure all references have required fields
     const hasAllRequiredFields = references.every(
-      (ref) => ref.name && ref.title && ref.company && ref.type && ref.email
+      (ref) => ref.name && ref.title && ref.company && ref.reference_type && ref.email
     );
 
     if (!hasAllRequiredFields) {
       setNotification({
         type: "error",
         message:
-          "All references must have name, title, company, type, and email",
+          "All references must have name, title, company, reference type, and email",
       });
       return;
     }
@@ -113,12 +124,14 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
       company: ref.company,
       email: ref.email,
       phone: ref.phone || "",
-      type: ref.type,
+      reference_type: ref.reference_type,
     }));
 
-    console.log("Submitting formatted references:", formattedReferences);
-    onUpdate(formattedReferences);
-    onNext();
+    updateData(formattedReferences, true); // Pass true to allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "References saved successfully!",
+    });
   };
 
   return (
@@ -127,13 +140,13 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">References</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.card}>
+          <div className={sharedStyles.cardHeader}>
+            <h3 className="text-lg font-semibold">References</h3>
           </div>
 
-          <div className="card-body">
+          <div className={sharedStyles.cardBody}>
             {references.length > 0 ? (
               <div className="space-y-4">
                 {references.map((ref) => (
@@ -151,10 +164,11 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                           <p className="text-sm text-gray-500">{ref.phone}</p>
                         )}
                         <p className="text-sm text-gray-500">
-                          Type: {ref.type}
+                          Type: {ref.reference_type}
                         </p>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleRemoveReference(ref.id)}
                         className="text-red-600 hover:text-red-800"
                       >
@@ -169,19 +183,13 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                 <p>No references added yet</p>
               </div>
             )}
-          </div>
-        </div>
 
-        <div className="card">
-          <div className="card-header bg-secondary-600">
-            <h3 className="text-lg font-semibold text-white">Add Reference</h3>
-          </div>
-
-          <div className="card-body">
-            <form onSubmit={handleAddReference} className="space-y-6">
+            {/* Add new reference form */}
+            <div className="border-t pt-6 mt-6">
+              <h4 className="text-lg font-medium mb-4">Add New Reference</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="name" className="form-label">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Name *
                   </label>
                   <input
@@ -195,17 +203,17 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.name ? "border-red-500" : ""
+                      errors.name ? sharedStyles.errorBorder : ""
                     }`}
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                    <p className={sharedStyles.error}>{errors.name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="title" className="form-label">
-                    Job Title *
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                    Title *
                   </label>
                   <input
                     type="text"
@@ -218,16 +226,16 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.title ? "border-red-500" : ""
+                      errors.title ? sharedStyles.errorBorder : ""
                     }`}
                   />
                   {errors.title && (
-                    <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+                    <p className={sharedStyles.error}>{errors.title}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="company" className="form-label">
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700">
                     Company *
                   </label>
                   <input
@@ -241,18 +249,16 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.company ? "border-red-500" : ""
+                      errors.company ? sharedStyles.errorBorder : ""
                     }`}
                   />
                   {errors.company && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.company}
-                    </p>
+                    <p className={sharedStyles.error}>{errors.company}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="type" className="form-label">
+                  <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                     Reference Type *
                   </label>
                   <select
@@ -265,7 +271,7 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.type ? "border-red-500" : ""
+                      errors.type ? sharedStyles.errorBorder : ""
                     }`}
                   >
                     {REFERENCE_TYPES.map((type) => (
@@ -275,12 +281,12 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                     ))}
                   </select>
                   {errors.type && (
-                    <p className="mt-1 text-sm text-red-500">{errors.type}</p>
+                    <p className={sharedStyles.error}>{errors.type}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="form-label">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Email *
                   </label>
                   <input
@@ -294,16 +300,16 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.email ? "border-red-500" : ""
+                      errors.email ? sharedStyles.errorBorder : ""
                     }`}
                   />
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                    <p className={sharedStyles.error}>{errors.email}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="form-label">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                     Phone
                   </label>
                   <input
@@ -317,44 +323,37 @@ const Reference = ({ data, onUpdate, onNext, onPrev }) => {
                       }))
                     }
                     className={`${sharedStyles.inputStyle} ${
-                      errors.phone ? "border-red-500" : ""
+                      errors.phone ? sharedStyles.errorBorder : ""
                     }`}
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
+                    <p className={sharedStyles.error}>{errors.phone}</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="mt-6">
                 <button
-                  type="submit"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  type="button"
+                  onClick={handleAddReference}
+                  className={sharedStyles.buttonSuccess}
                 >
                   Add Reference
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex justify-end space-x-4">
           <button
-            type="button"
-            onClick={onPrev}
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            type="submit"
+            className={sharedStyles.buttonPrimary}
           >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            Next
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

@@ -4,12 +4,12 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 // Check if we have access token and refresh token in local storage
 const api = axios.create({
-    baseURL: 'http://localhost:8000/',
+    baseURL: 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },
 })
-console.log('Base URL:', 'http://localhost:8000/');
+console.log('Base URL:', 'http://localhost:8000');
 
 // Add a request interceptor to check if access token exists in local storage
 api.interceptors.request.use(

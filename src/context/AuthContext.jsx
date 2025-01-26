@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axiosInstance.post('/api/auth/login/', { email, password });
+      console.log('Login response:', response.data);
       const { access, refresh, user: userData } = response.data;
       
       localStorage.setItem('access_token', access);
@@ -55,6 +56,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await axiosInstance.get('/api/auth/user/');
+      console.log('Auth check response:', response.data);
       setUser(response.data);
     } catch (error) {
       console.error('Auth check error:', error);

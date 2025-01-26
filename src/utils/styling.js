@@ -13,6 +13,9 @@ export const sharedStyles = {
   // Form Input Styles
   inputStyle: "input input-field w-full border-solid border-1 border-orange-300 rounded-md shadow-lg shadow-slate-500/20 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-sky-500",
   
+  // Textarea Style
+  textareaStyle: "w-full border-solid border-1 border-orange-300 rounded-md shadow-lg shadow-slate-500/20 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-sky-500 p-3 min-h-[200px] resize-y",
+  
   // Error Styles
   error: "flex items-center gap-2 text-red-500 text-sm mt-1",
   errorBorder: "border-red-500",
@@ -30,6 +33,11 @@ export const sharedStyles = {
   buttonGhost: `${buttonBase} text-gray-600 hover:bg-gray-100 active:bg-gray-200 focus:ring-gray-500`,
   buttonLink: `${buttonBase} text-blue-600 hover:text-blue-700 hover:underline focus:ring-blue-500 p-0`,
 
+  // Card Styles
+  card: "bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200",
+  cardHeader: "p-4 bg-sky-950 text-white rounded-t-lg",
+  cardBody: "p-6",
+
   // Education list styles
   educationList: "grid gap-4 sm:grid-cols-2",
   educationCard: "bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200",
@@ -44,18 +52,9 @@ export const sharedStyles = {
   experienceList: "grid gap-4 sm:grid-cols-2",
   experienceCard: "bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200",
   experienceHeader: "p-4 border-b border-gray-100",
-  experienceTitle: "text-lg font-semibold text-gray-900 truncate",
+  experienceTitle: "text-lg font-semibold text-gray-900",
   experienceSubtitle: "text-sm text-gray-600 mt-1",
   experienceBody: "p-4",
   experienceMeta: "flex items-center text-sm text-gray-500 space-x-2",
-  experienceDelete: "text-gray-400 hover:text-red-500 transition-colors",
-
-  // Button Utilities
-  buttonFullWidth: "w-full sm:w-auto",
-  buttonGroup: "inline-flex gap-1",
-  buttonIcon: `${buttonBase} p-2`,
-  actionButtons: "flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-1 mt-3",
-  
-  // Default Button (combines primary with responsive width)
-  defaultBtn: `${buttonBase} bg-sky-950 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500 w-full sm:w-auto`
+  experienceDelete: "absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors",
 };

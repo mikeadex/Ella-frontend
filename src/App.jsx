@@ -17,6 +17,13 @@ import ResetPasswordConfirm from './pages/ResetPasswordConfirm';
 import Logout from './pages/Logout';
 import ProtectedRoute from './components/ProtectedRoute';
 import CVWriter from './pages/cvWriter/write';
+import CVTemplates from './pages/CVTemplates';
+import TemplatePreview from './shared/pages/TemplatePreview';
+
+// Import global styles
+import './styles/index.css';
+import './styles/variables.css';
+import './styles/global.css';
 
 function AppRoutes() {
   return (
@@ -32,6 +39,7 @@ function AppRoutes() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/reset-password-confirm" element={<ResetPasswordConfirm />} />
             <Route path="/linkedin/callback" element={<LinkedInCallback />} />
+            <Route path="/template-preview" element={<TemplatePreview />} />
 
             {/* Protected routes (require authentication) */}
             <Route
@@ -87,6 +95,14 @@ function AppRoutes() {
               element={
                 <ProtectedRoute>
                   <LinkedInTest />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cv-templates"
+              element={
+                <ProtectedRoute>
+                  <CVTemplates />
                 </ProtectedRoute>
               }
             />

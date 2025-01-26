@@ -1,0 +1,195 @@
+.minimalist-cv {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  max-width: 210mm;
+  margin: 0 auto;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar Styles */
+.minimalist-sidebar {
+  background-color: #f8f9fa;
+  padding: 40px 30px;
+  border-right: 1px solid #e9ecef;
+}
+
+.profile-section h1 {
+  font-size: 1.8rem;
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 30px;
+  color: #212529;
+}
+
+.minimalist-sidebar h2 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+  color: #495057;
+}
+
+.minimalist-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px 0;
+}
+
+.minimalist-sidebar li {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+/* Skills Section */
+.skills-section ul {
+  margin-bottom: 20px;
+}
+
+.skill-bar {
+  height: 4px;
+  background-color: #e9ecef;
+  margin-top: 5px;
+  border-radius: 2px;
+}
+
+.skill-level {
+  height: 100%;
+  background-color: #495057;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Main Content */
+.minimalist-main {
+  padding: 40px;
+}
+
+.minimalist-main section {
+  margin-bottom: 40px;
+}
+
+.minimalist-main h2 {
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  color: #212529;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Experience & Education Items */
+.experience-item,
+.education-item {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.timeline {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.content h3 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #212529;
+}
+
+.content h4 {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+.content p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+/* Achievements List */
+.achievements {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.achievements li {
+  font-size: 0.9rem;
+  color: #495057;
+  margin-bottom: 5px;
+}
+
+/* Certifications Grid */
+.certifications-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.certification-item {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+/* Interests */
+.interests-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.interest-tag {
+  padding: 5px 12px;
+  background-color: #f8f9fa;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+/* References Grid */
+.references-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.reference-item {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+/* Social Links */
+.social-section a {
+  color: #495057;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.social-section a:hover {
+  color: #212529;
+}
+
+/* Print Styles */
+@media print {
+  .minimalist-cv {
+    box-shadow: none;
+  }
+  
+  .minimalist-sidebar {
+    background-color: #ffffff;
+  }
+}

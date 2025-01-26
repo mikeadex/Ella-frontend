@@ -1,0 +1,266 @@
+.modern-cv {
+  max-width: 210mm;
+  margin: 0 auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1a202c;
+  background: #ffffff;
+  line-height: 1.6;
+}
+
+/* Header Section */
+.modern-header {
+  padding: 40px 50px;
+  background: #2d3748;
+  color: white;
+  border-radius: 4px 4px 0 0;
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  letter-spacing: -0.5px;
+}
+
+.contact-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+/* Main Content */
+.modern-main {
+  padding: 40px 50px;
+}
+
+.modern-section {
+  margin-bottom: 35px;
+}
+
+.modern-section h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  position: relative;
+}
+
+.modern-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 50px;
+  height: 2px;
+  background-color: #4299e1;
+}
+
+/* Experience Section */
+.experience-item {
+  margin-bottom: 25px;
+  padding-left: 20px;
+  border-left: 2px solid #e2e8f0;
+  position: relative;
+}
+
+.experience-item::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4299e1;
+  border: 2px solid #ffffff;
+}
+
+.experience-header {
+  margin-bottom: 12px;
+}
+
+.experience-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.company {
+  font-weight: 500;
+  color: #4a5568;
+  margin-right: 15px;
+}
+
+.date {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.description {
+  color: #4a5568;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.achievements {
+  color: #4a5568;
+  padding-left: 20px;
+  position: relative;
+}
+
+/* Skills Section */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.skill-item {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.skill-name {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #2d3748;
+}
+
+.skill-level {
+  height: 6px;
+  background-color: #edf2f7;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.skill-progress {
+  height: 100%;
+  background-color: #4299e1;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Education Section */
+.education-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.education-item h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 5px;
+}
+
+/* Languages & Interests */
+.languages-grid,
+.interests-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.language-item,
+.interest-item {
+  background: #f7fafc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+.language-item .level {
+  margin-left: 8px;
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+/* References Section */
+.references-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.reference-item {
+  background: #f7fafc;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.reference-item h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 5px;
+}
+
+.reference-item p {
+  color: #4a5568;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+/* Social Media */
+.social-links {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  color: #4299e1;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.social-link:hover {
+  background: #ebf8ff;
+  border-color: #4299e1;
+}
+
+/* Print Styles */
+@media print {
+  .modern-cv {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: white;
+    color: black;
+  }
+
+  .modern-header {
+    background: #2d3748 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .experience-item::before,
+  .modern-section h2::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

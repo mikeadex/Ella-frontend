@@ -1,39 +1,45 @@
 import { useState } from "react";
-import { INTEREST_CATEGORIES } from "../../utils/constants";
-import { sharedStyles } from "../../utils/styling";
+import { commonRules, focusField, validateForm } from "../../utils/formValidation";
 import Notification from "../common/Notification";
+import { sharedStyles } from "../../utils/styling";
+import { INTEREST_CATEGORIES } from "../../utils/constants";
 
-const Interests = ({ data, onUpdate, onNext, onPrev }) => {
+const Interests = ({ data, updateData }) => {
   const [interests, setInterests] = useState(data || []);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [customInterest, setCustomInterest] = useState("");
+  const [currentInterest, setCurrentInterest] = useState({
+    name: "",
+    description: "",
+    isCustom: false,
+  });
+  const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleAddInterest = (interest) => {
-    if (interests.some((i) => i.name.toLowerCase() === interest.toLowerCase())) {
-      setNotification({
-        type: "error",
-        message: "This interest has already been added",
-      });
-      return;
-    }
-
-    const newInterest = {
-      id: Date.now(),
-      name: interest,
-      category: selectedCategory || "Other",
-    };
-
-    setInterests((prev) => [...prev, newInterest]);
-    setNotification({
-      type: "success",
-      message: "Interest added successfully!",
-    });
+  const validationRules = {
+    name: { required: true, label: "Interest Name" },
   };
 
-  const handleAddCustomInterest = () => {
-    if (!customInterest.trim()) {
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setCurrentInterest((prev) => ({
+      ...prev,
+      [id]: value,
+      isCustom: true,
+    }));
+
+    // Clear error for the field being edited
+    if (errors[id]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleAddInterest = (interestName = currentInterest.name) => {
+    if (!interestName.trim()) {
       setNotification({
         type: "error",
         message: "Please enter an interest",
@@ -41,22 +47,66 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
       return;
     }
 
-    handleAddInterest(customInterest);
-    setCustomInterest("");
-  };
+    // Check if interest already exists
+    if (interests.some((interest) => interest.name.toLowerCase() === interestName.toLowerCase())) {
+      setNotification({
+        type: "error",
+        message: "This interest has already been added",
+      });
+      return;
+    }
 
-  const handleRemoveInterest = (id) => {
-    setInterests((prev) => prev.filter((interest) => interest.id !== id));
+    // Add the new interest
+    const newInterest = {
+      name: interestName,
+      description: currentInterest.description,
+      category: selectedCategory || "Other",
+      isCustom: currentInterest.isCustom,
+    };
+
+    const updatedInterests = [...interests, newInterest];
+    setInterests(updatedInterests);
+    updateData(updatedInterests, false); // Pass false to prevent auto-navigation
+
+    // Reset the form
+    setCurrentInterest({
+      name: "",
+      description: "",
+      isCustom: false,
+    });
+    setErrors({});
     setNotification({
       type: "success",
-      message: "Interest removed successfully!",
+      message: "Interest added successfully!",
+    });
+  };
+
+  const handleDeleteInterest = (index) => {
+    const updatedInterests = interests.filter((_, i) => i !== index);
+    setInterests(updatedInterests);
+    updateData(updatedInterests, false); // Pass false to prevent auto-navigation
+    setNotification({
+      type: "success",
+      message: "Interest deleted successfully!",
     });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onUpdate(interests);
-    onNext();
+
+    if (interests.length === 0) {
+      setNotification({
+        type: "error",
+        message: "Please add at least one interest",
+      });
+      return;
+    }
+
+    updateData(interests, true); // Pass true to allow navigation on final submit
+    setNotification({
+      type: "success",
+      message: "Interests saved successfully!",
+    });
   };
 
   const filteredInterests = INTEREST_CATEGORIES.reduce((acc, category) => {
@@ -80,35 +130,33 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
         <Notification {...notification} onClose={() => setNotification(null)} />
       )}
 
-      <div className="space-y-6 max-w-3xl mx-auto">
-        <div className="card">
-          <div className="card-header bg-primary-600">
-            <h3 className="text-lg font-semibold text-white">Interests & Hobbies</h3>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+        <div className={sharedStyles.experienceCard}>
+          <div className="bg-sky-950 text-white p-4 rounded-t-lg">
+            <h3 className="text-lg font-semibold">Interests & Hobbies</h3>
           </div>
 
-          <div className="card-body">
-            {/* Selected Interests */}
+          <div className="p-6">
+            {/* List of added interests */}
             {interests.length > 0 && (
               <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Your Interests
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {interests.map((interest) => (
-                    <span
-                      key={interest.id}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-50 text-primary-700"
+                <h4 className="text-lg font-medium mb-4">Added Interests</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {interests.map((interest, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
                     >
-                      {interest.name}
                       <button
-                        onClick={() => handleRemoveInterest(interest.id)}
-                        className="ml-2 text-primary-600 hover:text-primary-800"
+                        type="button"
+                        onClick={() => handleDeleteInterest(index)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                       >
                         <svg
-                          className="h-4 w-4"
+                          className="w-5 h-5"
                           fill="none"
-                          viewBox="0 0 24 24"
                           stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
                           <path
                             strokeLinecap="round"
@@ -118,7 +166,20 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
                           />
                         </svg>
                       </button>
-                    </span>
+                      <div>
+                        <h5 className="font-medium">{interest.name}</h5>
+                        {interest.description && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {interest.description}
+                          </p>
+                        )}
+                        {interest.category && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {interest.category}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -128,7 +189,10 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label htmlFor="category" className="form-label">
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Category
                   </label>
                   <select
@@ -147,7 +211,10 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
                 </div>
 
                 <div className="flex-1">
-                  <label htmlFor="search" className="form-label">
+                  <label
+                    htmlFor="search"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Search Interests
                   </label>
                   <input
@@ -173,7 +240,15 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
                         {category.interests.map((interest) => (
                           <button
                             key={interest}
-                            onClick={() => handleAddInterest(interest)}
+                            type="button"
+                            onClick={() => {
+                              setCurrentInterest((prev) => ({
+                                ...prev,
+                                name: interest,
+                                isCustom: false,
+                              }));
+                              handleAddInterest(interest);
+                            }}
                             className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
                           >
                             <svg
@@ -199,27 +274,56 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
               )}
 
               {/* Custom Interest Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customInterest}
-                  onChange={(e) => setCustomInterest(e.target.value)}
-                  className={`${sharedStyles.inputStyle} flex-1`}
-                  placeholder="Add a custom interest..."
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddCustomInterest();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomInterest}
-                  className={sharedStyles.buttonSuccess}
-                >
-                  Add
-                </button>
+              <div className="border-t pt-4">
+                <h4 className="text-lg font-medium mb-4">Add Custom Interest</h4>
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Interest Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={currentInterest.name}
+                    onChange={handleChange}
+                    className={`${sharedStyles.inputStyle} ${
+                      errors.name ? sharedStyles.errorBorder : ""
+                    }`}
+                    placeholder="e.g., Origami"
+                  />
+                  {errors.name && (
+                    <p className={sharedStyles.error}>{errors.name[0]}</p>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="description"
+                    value={currentInterest.description}
+                    onChange={handleChange}
+                    rows={3}
+                    className={sharedStyles.inputStyle}
+                    placeholder="Brief description of your interest..."
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleAddInterest()}
+                    className={sharedStyles.buttonSuccess}
+                  >
+                    Add Custom Interest
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -227,21 +331,13 @@ const Interests = ({ data, onUpdate, onNext, onPrev }) => {
 
         <div className="flex justify-end space-x-4">
           <button
-            type="button"
-            onClick={onPrev}
-            className={sharedStyles.buttonSecondary}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             className={sharedStyles.buttonPrimary}
           >
-            Next
+            Save & Continue
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

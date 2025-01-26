@@ -3,7 +3,7 @@ import { commonRules, focusField, validateForm } from "../../utils/formValidatio
 import Notification from "../common/Notification";
 import { sharedStyles } from "../../utils/styling";
 
-const PersonalInfo = ({ data, onUpdate, onNext }) => {
+const PersonalInfo = ({ data, updateData }) => {
   const [formData, setFormData] = useState({
     first_name: data?.first_name || "",
     last_name: data?.last_name || "",
@@ -59,14 +59,12 @@ const PersonalInfo = ({ data, onUpdate, onNext }) => {
     }
 
     // if validation passes
-    onUpdate(formData);
+    updateData(formData);
     setNotification({
       type: 'success',
       message: 'Personal information saved successfully!'
     });
-    onNext();
   };
-
 
   const errorIcon = (
     <svg

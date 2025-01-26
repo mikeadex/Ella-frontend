@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [cvCount, setCvCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCVs = async () => {
+      try {
+        const response = await api.get('/cv_writer/cv/');
+        console.log('CV Response:', response.data);
+        setCvCount(response.data.length);
+      } catch (error) {
+        console.error('Error fetching CVs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchCVs();
+    }
+  }, [user]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -36,7 +57,7 @@ const Dashboard = () => {
                       </dt>
                       <dd className="flex items-baseline">
                         <div className="text-2xl font-semibold text-gray-900">
-                          0
+                          {loading ? '...' : cvCount}
                         </div>
                       </dd>
                     </dl>
@@ -44,9 +65,12 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="bg-gray-50 px-5 py-3">
-                <div className="text-sm">
-                  <a href="/write" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <div className="text-sm flex justify-between">
+                  <a href="/cv-writer/write" className="font-medium text-indigo-600 hover:text-indigo-500">
                     Create New CV
+                  </a>
+                  <a href="/cv-templates" className="font-medium text-indigo-600 hover:text-indigo-500">
+                    View Templates
                   </a>
                 </div>
               </div>
