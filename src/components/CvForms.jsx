@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../api';
+import axiosInstance from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 
@@ -15,8 +15,6 @@ function CvForm({route, method}) {
     const[interest, setInterest] = useState('');
     const [additional_information, setAdditionalInformation] = useState('');
 
-    
-
     const createCv = (e) => {
         e.preventDefault();
         const payload = {
@@ -30,7 +28,7 @@ function CvForm({route, method}) {
             interest,
             additional_information
         }
-        api.post("api/cv/writer/", payload)
+        axiosInstance.post("/api/cv_writer/cv/", payload)
         .then((res) => {
             if (res.status === 201) alert("cv created!")
                 else alert("Something went wrong");
@@ -90,8 +88,5 @@ function CvForm({route, method}) {
         </form>
     </div>;
 }
-
-
-
 
 export default CvForm;

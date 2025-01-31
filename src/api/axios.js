@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-const baseURL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
-  baseURL,
-  timeout: 5000,
+  baseURL: API_BASE_URL,
   headers: {
+    'Accept': 'application/json',
     'Content-Type': 'application/json',
-    accept: 'application/json',
   },
+  withCredentials: true,
 });
 
 // Add a request interceptor to add the auth token to requests
@@ -25,42 +25,14 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle token refresh
+// Add a response interceptor to handle unauthorized errors
 axiosInstance.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // If the error status is 401 and there hasn't been a retry yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
-        }
-
-        // Try to refresh the token
-        const response = await axios.post(`${baseURL}/auth/token/refresh/`, {
-          refresh: refreshToken,
-        });
-
-        const { access } = response.data;
-        localStorage.setItem('access_token', access);
-
-        // Retry the original request with the new token
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-        return axios(originalRequest);
-      } catch (refreshError) {
-        // If refresh fails, clear tokens and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized error (e.g., redirect to login)
+      console.error('Unauthorized access. Please log in.');
     }
-
     return Promise.reject(error);
   }
 );

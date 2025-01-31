@@ -4,6 +4,19 @@ import ModernTemplate from '../../components/CVTemplates/ModernTemplate';
 import ProfessionalTemplate from './Professional';
 import './TemplatePreview.css';
 
+const templates = {
+  modern: {
+    name: 'Modern',
+    description: 'A contemporary design with a creative layout, perfect for tech, design, and creative roles. Features a clean sidebar and eye-catching accent colors.',
+    component: ModernTemplate,
+  },
+  professional: {
+    name: 'Professional',
+    description: 'A traditional layout with a modern touch, ideal for corporate, business, and executive positions. Emphasizes experience and achievements.',
+    component: ProfessionalTemplate,
+  }
+};
+
 const transformModernData = (data) => {
   return {
     profile: {
@@ -86,31 +99,32 @@ const TemplatePreview = () => {
   const modernData = transformModernData(resumeData);
   const professionalData = transformProfessionalData(resumeData);
 
-  console.log('Professional Data:', professionalData); // Debug log
-
-  const templates = {
-    modern: <ModernTemplate data={modernData} />,
-    professional: <ProfessionalTemplate data={professionalData} />
+  const getTemplateComponent = () => {
+    const Template = templates[selectedTemplate].component;
+    return selectedTemplate === 'modern' ? 
+      <Template data={modernData} /> : 
+      <Template data={professionalData} />;
   };
 
   return (
     <div className="template-preview">
       <div className="template-selector">
-        <button
-          className={selectedTemplate === 'modern' ? 'active' : ''}
-          onClick={() => setSelectedTemplate('modern')}
-        >
-          Modern
-        </button>
-        <button
-          className={selectedTemplate === 'professional' ? 'active' : ''}
-          onClick={() => setSelectedTemplate('professional')}
-        >
-          Professional
-        </button>
+        {Object.entries(templates).map(([key, template]) => (
+          <button
+            key={key}
+            className={selectedTemplate === key ? 'active' : ''}
+            onClick={() => setSelectedTemplate(key)}
+            title={template.description}
+          >
+            {template.name}
+          </button>
+        ))}
+      </div>
+      <div className="template-info">
+        <p>{templates[selectedTemplate].description}</p>
       </div>
       <div className="template-container">
-        {templates[selectedTemplate]}
+        {getTemplateComponent()}
       </div>
     </div>
   );

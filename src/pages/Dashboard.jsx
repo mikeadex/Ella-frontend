@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../api';
+import axiosInstance from '../api/axios';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -10,7 +10,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCVs = async () => {
       try {
-        const response = await api.get('/cv_writer/cv/');
+        const response = await axiosInstance.get('/api/cv_writer/cv/');
         console.log('CV Response:', response.data);
         setCvCount(response.data.length);
       } catch (error) {

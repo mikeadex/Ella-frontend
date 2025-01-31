@@ -202,30 +202,40 @@ export const LANGUAGE_PROFICIENCY = [
 export const SUMMARY_TEMPLATES = [
   {
     title: "Experienced Professional",
-    template: "Results-driven [profession] with [X] years of experience in [industry/field]. Proven track record of [key achievement] and [key skill]. Skilled in [relevant skills], with a focus on [specialization]. Seeking to leverage my expertise in [area] to drive success in [target role/industry]."
+    template: "Results-driven professional with [X] years of experience in [industry/field]. Proven track record of [key achievement] and expertise in [key skills]. Skilled at [relevant skill] and [relevant skill], consistently delivering [specific outcome]. Seeking to leverage my expertise in [target role/industry].",
+    placeholder: true
   },
   {
     title: "Recent Graduate",
-    template: "Motivated [field] graduate with strong foundation in [key areas]. Demonstrated ability to [relevant skill] through [project/internship experience]. Eager to apply my knowledge in [specific areas] to contribute to [industry/field]."
+    template: "Recent [degree] graduate in [field] with strong foundation in [relevant skills]. Completed projects in [project types] demonstrating expertise in [technical skills]. Seeking to leverage academic excellence and [relevant experience] to contribute to [target role/company].",
+    placeholder: true
   },
   {
     title: "Career Changer",
-    template: "Versatile professional transitioning from [previous field] to [target field], bringing transferable skills in [relevant skills]. Combining [previous experience] with newly acquired expertise in [new skills/qualifications] to offer a unique perspective in [target role/industry]."
+    template: "Versatile professional transitioning from [previous field] to [target field], bringing transferable skills in [skill 1], [skill 2], and [skill 3]. Successfully [key achievement] in previous role, demonstrating ability to [relevant competency]. Eager to apply unique perspective and proven abilities to [target role].",
+    placeholder: true
   },
   {
-    title: "Senior Executive",
-    template: "Strategic [job title] with [X] years of leadership experience in [industry]. Proven success in [key achievement] and [major responsibility]. Track record of [specific accomplishment], resulting in [measurable outcome]. Seeking to bring my expertise in [areas] to drive growth and innovation."
+    title: "Technical Specialist",
+    template: "Innovative [job title] with expertise in [technical skill 1], [technical skill 2], and [technical skill 3]. Led development of [project/product] resulting in [specific outcome]. Proven ability to [key competency] while ensuring [important metric]. Seeking to advance technical expertise in [target role/company].",
+    placeholder: true
+  },
+  {
+    title: "Manager/Leader",
+    template: "Dynamic leader with [X] years managing [team size/type] teams in [industry]. Successfully [key achievement] while directing [project/initiative]. Skilled in [leadership skill 1], [leadership skill 2], and [leadership skill 3], consistently achieving [specific outcomes]. Looking to bring strategic leadership to [target role].",
+    placeholder: true
   }
 ];
 
 export const SUMMARY_TIPS = [
-  "Keep it concise (3-5 sentences)",
-  "Focus on your most relevant achievements",
+  "Keep your summary concise (3-5 sentences)",
+  "Focus on your most relevant achievements and skills",
   "Use action words and quantifiable results",
-  "Tailor it to your target role or industry",
-  "Highlight your unique value proposition",
-  "Include relevant keywords from job descriptions",
-  "Avoid generic statements and clichés"
+  "Tailor your summary to the specific job or industry",
+  "Highlight what makes you unique",
+  "Avoid generic phrases and clichés",
+  "Include keywords from the job description",
+  "Make it forward-looking - state your career goals"
 ];
 
 export const SOCIAL_MEDIA_PLATFORMS = [

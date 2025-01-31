@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import PersonalInfo from "./PersonalInfo";
 import ProfessionalSummary from "./ProfessionalSummary";
@@ -6,10 +6,11 @@ import Experience from "./Experience";
 import Education from "./Education";
 import Skills from "./Skills";
 import Language from "./Language";
-import Reference from "./Reference";
-import SocialMedia from "./SocialMedia";
 import Certification from "./Certification";
 import Interests from "./Interests";
+import SocialMedia from "./SocialMedia";
+import Reference from "./Reference";
+import CVPreview from "./CVPreview";
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -58,6 +59,12 @@ const Progress = styled.div`
   transition: width 0.3s ease;
 `;
 
+const StepTitle = styled.h2`
+  color: var(--text-color);
+  text-align: center;
+  margin-bottom: 2rem;
+`;
+
 const CVFormContainer = ({ onCVCreated }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -80,8 +87,18 @@ const CVFormContainer = ({ onCVCreated }) => {
       title: "Personal Information",
       key: "personalInfo",
       validate: (data) => {
+        console.log('Validating personal info:', data);
+        if (!data) return false;
+        
         const required = ['first_name', 'last_name', 'email'];
-        return required.every(field => data[field] && data[field].trim() !== '');
+        const isValid = required.every(field => {
+          const hasField = data[field] && data[field].trim() !== '';
+          console.log(`Field ${field}:`, { value: data[field], isValid: hasField });
+          return hasField;
+        });
+        
+        console.log('Personal Info validation result:', isValid);
+        return isValid;
       }
     },
     { 
@@ -146,20 +163,53 @@ const CVFormContainer = ({ onCVCreated }) => {
       title: "Social Media",
       key: "socialMedia",
       validate: () => true
+    },
+    { 
+      id: 11, 
+      component: CVPreview, 
+      title: "Preview",
+      key: "preview",
+      validate: () => true
     }
   ];
 
   const handleUpdateData = (key, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    console.log('Updating data:', { key, value });
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [key]: value
+      };
+      console.log('New form data:', newData);
+      return newData;
+    });
   };
 
   const handleNextStep = () => {
-    const currentStepData = formData[steps[step - 1].key];
-    if (steps[step - 1].validate(currentStepData)) {
-      setStep(prev => Math.min(prev + 1, steps.length));
+    console.log('Current step:', step);
+    console.log('Current form data:', formData);
+    
+    const currentStep = steps[step - 1];
+    const currentStepData = formData[currentStep.key];
+    
+    console.log('Validating step:', {
+      stepId: currentStep.id,
+      stepTitle: currentStep.title,
+      data: currentStepData
+    });
+    
+    const isValid = currentStep.validate(currentStepData);
+    console.log('Validation result:', isValid);
+    
+    if (isValid) {
+      console.log('Moving to next step');
+      setStep(prev => {
+        const nextStep = Math.min(prev + 1, steps.length);
+        console.log('New step:', nextStep);
+        return nextStep;
+      });
+    } else {
+      console.log('Validation failed');
     }
   };
 
@@ -183,9 +233,11 @@ const CVFormContainer = ({ onCVCreated }) => {
         <Progress step={step} total={steps.length} />
       </ProgressBar>
 
+      <StepTitle>{steps[step - 1].title}</StepTitle>
+
       <CurrentStepComponent
         data={formData[steps[step - 1].key]}
-        updateData={handleUpdateData}
+        updateData={(value) => handleUpdateData(steps[step - 1].key, value)}
       />
 
       <Navigation>
@@ -197,9 +249,8 @@ const CVFormContainer = ({ onCVCreated }) => {
         </Button>
         <Button 
           onClick={step === steps.length ? handleFormCompletion : handleNextStep}
-          disabled={step === 1}
         >
-          {step === steps.length ? 'Finish' : 'Next'}
+          {step === steps.length ? 'Create CV' : 'Next'}
         </Button>
       </Navigation>
     </FormContainer>

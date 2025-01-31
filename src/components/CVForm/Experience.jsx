@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import RichTextMenuBar from "../common/RichTextMenuBar";
 import {
   commonRules,
   focusField,
   validateForm,
 } from "../../utils/formValidation";
-import Notification from "../common/Notification";
 import { sharedStyles } from "../../utils/styling";
+import Notification from "../common/Notification";
+import axiosInstance from "../../api/axios"; 
+import { FaPlus, FaMinus, FaMagic } from 'react-icons/fa';
 
 const EMPLOYMENT_TYPES = [
   "Full-time",
@@ -17,6 +22,7 @@ const EMPLOYMENT_TYPES = [
 
 const Experience = ({ data, updateData }) => {
   const [experiences, setExperiences] = useState(data || []);
+  const [expandedId, setExpandedId] = useState(null);
   const [currentExperience, setCurrentExperience] = useState({
     company_name: "",
     job_title: "",
@@ -27,9 +33,54 @@ const Experience = ({ data, updateData }) => {
     end_date: "",
     current: false,
   });
+  const [editIndex, setEditIndex] = useState(-1);
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
+  const [improving, setImproving] = useState(false);
+  const [improvedText, setImprovedText] = useState("");
+  const [improvingField, setImprovingField] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [currentlyImproving, setCurrentlyImproving] = useState({ index: -1, field: null });
+
+  const descriptionEditor = useEditor({
+    extensions: [StarterKit],
+    content: currentExperience.job_description || '',
+    onUpdate: ({ editor }) => {
+      handleInputChange('job_description', editor.getHTML());
+    },
+  });
+
+  const achievementsEditor = useEditor({
+    extensions: [StarterKit],
+    content: currentExperience.achievements || '',
+    onUpdate: ({ editor }) => {
+      handleInputChange('achievements', editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (descriptionEditor && currentExperience.job_description !== descriptionEditor.getHTML()) {
+      descriptionEditor.commands.setContent(currentExperience.job_description || '');
+    }
+    if (achievementsEditor && currentExperience.achievements !== achievementsEditor.getHTML()) {
+      achievementsEditor.commands.setContent(currentExperience.achievements || '');
+    }
+  }, [currentExperience, descriptionEditor, achievementsEditor]);
+
+  const handleInputChange = (field, value) => {
+    setCurrentExperience((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
 
   const validationRules = {
     company_name: { required: true, label: "Company Name" },
@@ -131,6 +182,89 @@ const Experience = ({ data, updateData }) => {
     });
   };
 
+  const handleImprove = async (field, content) => {
+    if (!content?.trim()) {
+      setNotification({
+        type: "error",
+        message: "Please enter some text to improve"
+      });
+      return;
+    }
+
+    setImprovingField(field);
+    setImproving(true);
+    setProgress(0);
+    setNotification({
+      type: "info",
+      message: `Improving ${field === 'job_description' ? 'job description' : 'achievements'}...`
+    });
+
+    // Start progress simulation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + (90 - prev) * 0.1;
+      });
+    }, 1000);
+
+    try {
+      const response = await axiosInstance.post(
+        '/api/cv_writer/cv/improve_summary/',
+        { 
+          summary: content,
+          type: field === 'job_description' ? 'job_description' : 'achievement'
+        },
+        { timeout: 120000 }
+      );
+
+      if (response.data && response.data.improved) {
+        setProgress(100);
+        setImprovedText(response.data.improved);
+        setNotification({
+          type: "success",
+          message: "Review and accept the improved version if you like it."
+        });
+      }
+    } catch (err) {
+      console.error('API Error:', err);
+      let errorMessage = "Failed to improve text. Please try again.";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "Your session has expired. Please log in again.";
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return;
+      }
+      
+      setNotification({
+        type: "error",
+        message: errorMessage
+      });
+    } finally {
+      clearInterval(progressInterval);
+      setImproving(false);
+    }
+  };
+
+  const handleAcceptImprovement = () => {
+    const updatedExperience = { ...currentExperience };
+    updatedExperience[improvingField] = improvedText;
+    setCurrentExperience(updatedExperience);
+    setImprovedText("");
+    setImprovingField("");
+    setNotification({
+      type: "success",
+      message: "Improvement accepted!"
+    });
+  };
+
+  const handleDiscardImprovement = () => {
+    setImprovedText("");
+    setImprovingField("");
+    setNotification(null);
+  };
+
   return (
     <div className="w-full px-4 sm:px-6 md:px-8 py-6">
       {notification && (
@@ -176,7 +310,7 @@ const Experience = ({ data, updateData }) => {
                       <div
                         className="cursor-pointer"
                         onClick={() =>
-                          setExpandedId(expandedId === index ? null : index)
+                          toggleExpand(index)
                         }
                       >
                         <div className="flex justify-between items-start">
@@ -199,12 +333,93 @@ const Experience = ({ data, updateData }) => {
                             </p>
                             <p className="text-sm">
                               <span className="font-medium">Description:</span>{" "}
-                              {exp.job_description}
+                              <div 
+                                className="prose max-w-none text-gray-700" 
+                                dangerouslySetInnerHTML={{ __html: exp.job_description }}
+                              />
                             </p>
                             <p className="text-sm">
                               <span className="font-medium">Achievements:</span>{" "}
-                              {exp.achievements}
+                              <div 
+                                className="prose max-w-none text-gray-700" 
+                                dangerouslySetInnerHTML={{ __html: exp.achievements }}
+                              />
                             </p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium">Job Description</label>
+                                <button
+                                  onClick={() => handleImprove('job_description', exp.job_description)}
+                                  disabled={improving || !exp.job_description.trim()}
+                                  className={`flex items-center space-x-1 px-2 py-1 rounded text-sm ${
+                                    improving || !exp.job_description.trim()
+                                      ? 'bg-gray-300 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
+                                >
+                                  <FaMagic className="w-4 h-4" />
+                                  <span>Improve</span>
+                                </button>
+                              </div>
+                              <div 
+                                className="prose max-w-none text-gray-700" 
+                                dangerouslySetInnerHTML={{ __html: exp.job_description }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium">Key Achievements</label>
+                                <button
+                                  onClick={() => handleImprove('achievements', exp.achievements)}
+                                  disabled={improving || !exp.achievements.trim()}
+                                  className={`flex items-center space-x-1 px-2 py-1 rounded text-sm ${
+                                    improving || !exp.achievements.trim()
+                                      ? 'bg-gray-300 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
+                                >
+                                  <FaMagic className="w-4 h-4" />
+                                  <span>Improve</span>
+                                </button>
+                              </div>
+                              <div 
+                                className="prose max-w-none text-gray-700" 
+                                dangerouslySetInnerHTML={{ __html: exp.achievements }}
+                              />
+                            </div>
+                            {improving && currentlyImproving.index === index && (
+                              <div className="mt-4">
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                                  <div
+                                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                                    style={{ width: `${progress}%` }}
+                                  />
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1 text-center">
+                                  {progress < 100 ? 'Improving...' : 'Complete!'}
+                                </div>
+                              </div>
+                            )}
+                            {improvedText && currentlyImproving.index === index && (
+                              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+                                <h4 className="font-medium text-green-800 mb-2">Improved Version:</h4>
+                                <p className="text-gray-800 whitespace-pre-wrap">{improvedText}</p>
+                                <div className="mt-4 flex space-x-4">
+                                  <button
+                                    onClick={handleAcceptImprovement}
+                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={handleDiscardImprovement}
+                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                  >
+                                    Discard
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -360,50 +575,93 @@ const Experience = ({ data, updateData }) => {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="job_description"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Job Description *
-                  </label>
-                  <textarea
-                    id="job_description"
-                    rows={4}
-                    value={currentExperience.job_description}
-                    onChange={handleChange}
-                    className={`${sharedStyles.textareaStyle} ${
-                      errors.job_description ? sharedStyles.errorBorder : ""
-                    }`}
-                    placeholder="Describe your key responsibilities and duties..."
-                  />
-                  {errors.job_description && (
-                    <p className={sharedStyles.error}>
-                      {errors.job_description[0]}
-                    </p>
-                  )}
-                </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Job Description
+                    </label>
+                    <div className="prose max-w-none">
+                      <RichTextMenuBar editor={descriptionEditor} />
+                      <EditorContent
+                        editor={descriptionEditor}
+                        className={`${sharedStyles.textareaStyle} min-h-[150px] focus:outline-none ${
+                          errors.job_description ? "border-red-500" : ""
+                        }`}
+                      />
+                    </div>
+                    {errors.job_description && (
+                      <p className="mt-1 text-sm text-red-500">{errors.job_description}</p>
+                    )}
+                    {!improvedText && improvingField !== 'job_description' && (
+                      <button
+                        onClick={() => handleImprove('job_description', descriptionEditor.getText())}
+                        className={`${sharedStyles.buttonGhost} mt-2`}
+                        disabled={improving}
+                      >
+                        Improve with AI
+                      </button>
+                    )}
+                  </div>
 
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="achievements"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Key Achievements *
-                  </label>
-                  <textarea
-                    id="achievements"
-                    rows={4}
-                    value={currentExperience.achievements}
-                    onChange={handleChange}
-                    className={`${sharedStyles.textareaStyle} ${
-                      errors.achievements ? sharedStyles.errorBorder : ""
-                    }`}
-                    placeholder="List your major achievements and contributions..."
-                  />
-                  {errors.achievements && (
-                    <p className={sharedStyles.error}>
-                      {errors.achievements[0]}
-                    </p>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Key Achievements
+                    </label>
+                    <div className="prose max-w-none">
+                      <RichTextMenuBar editor={achievementsEditor} />
+                      <EditorContent
+                        editor={achievementsEditor}
+                        className={`${sharedStyles.textareaStyle} min-h-[150px] focus:outline-none ${
+                          errors.achievements ? "border-red-500" : ""
+                        }`}
+                      />
+                    </div>
+                    {errors.achievements && (
+                      <p className="mt-1 text-sm text-red-500">{errors.achievements}</p>
+                    )}
+                    {!improvedText && improvingField !== 'achievements' && (
+                      <button
+                        onClick={() => handleImprove('achievements', achievementsEditor.getText())}
+                        className={`${sharedStyles.buttonGhost} mt-2`}
+                        disabled={improving}
+                      >
+                        Improve with AI
+                      </button>
+                    )}
+                  </div>
+
+                  {improving && currentlyImproving.index === -1 && (
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1 text-center">
+                        {progress < 100 ? 'Improving...' : 'Complete!'}
+                      </div>
+                    </div>
+                  )}
+
+                  {improvedText && currentlyImproving.index === -1 && (
+                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+                      <h4 className="font-medium text-green-800 mb-2">Improved Version:</h4>
+                      <p className="text-gray-800 whitespace-pre-wrap">{improvedText}</p>
+                      <div className="mt-4 flex space-x-4">
+                        <button
+                          onClick={handleAcceptImprovement}
+                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={handleDiscardImprovement}
+                          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

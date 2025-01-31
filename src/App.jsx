@@ -19,6 +19,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import CVWriter from './pages/cvWriter/write';
 import CVTemplates from './pages/CVTemplates';
 import TemplatePreview from './shared/pages/TemplatePreview';
+import CVImprovements from './pages/cvWriter/CVImprovements';
+import CVPreview from './pages/cvWriter/preview';
+import CVPreviewPage from './pages/CVPreviewPage';
 
 // Import global styles
 import './styles/index.css';
@@ -29,11 +32,13 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        {/* <Navbar /> */}
         <div className="flex-grow">
           <Routes>
             {/* Public routes (no authentication required) */}
             <Route path="/" element={<Home />} />
+            <Route path="/cv-writer" element={<CVWriter />} />
+            <Route path="/cv-writer/preview/:id" element={<CVPreviewPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -55,6 +60,22 @@ function AppRoutes() {
               element={
                 <ProtectedRoute>
                   <CVWriter />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cv-writer/preview/:cvId"
+              element={
+                <ProtectedRoute>
+                  <CVPreview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cv-writer/improvements/:cvId"
+              element={
+                <ProtectedRoute>
+                  <CVImprovements />
                 </ProtectedRoute>
               }
             />
@@ -103,6 +124,14 @@ function AppRoutes() {
               element={
                 <ProtectedRoute>
                   <CVTemplates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cv/:cvId/improvements"
+              element={
+                <ProtectedRoute>
+                  <CVImprovements />
                 </ProtectedRoute>
               }
             />

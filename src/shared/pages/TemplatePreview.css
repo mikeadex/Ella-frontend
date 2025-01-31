@@ -13,7 +13,7 @@
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .template-selector button {
@@ -25,6 +25,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .template-selector button:hover {
@@ -35,6 +36,15 @@
   background: var(--primary-color, #007bff);
   color: white;
   border-color: #0056b3;
+}
+
+.template-info {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  color: #666;
+  font-size: 0.95em;
+  line-height: 1.5;
 }
 
 .template-container {
@@ -52,5 +62,21 @@
   .template-container {
     box-shadow: none;
     padding: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .template-preview {
+    padding: 1rem 0;
+  }
+
+  .template-selector {
+    flex-direction: column;
+    padding: 0 1rem;
+  }
+
+  .template-info {
+    padding: 0 1rem;
+    margin-bottom: 1.5rem;
   }
 }

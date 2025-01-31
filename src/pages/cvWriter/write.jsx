@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import axiosInstance from "../../api/axios";
 import CVFormContainer from "../../components/CVForm/CVFormContainer";
 import styled from "styled-components";
 import { useAuth } from "../../context/AuthContext";
@@ -21,8 +21,31 @@ const Title = styled.h1`
   margin: 0;
 `;
 
+const LoadingOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const LoadingText = styled.div`
+  color: white;
+  font-size: 1.2rem;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+`;
+
 function Write() {
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();  // Get user from auth context
 
@@ -47,6 +70,7 @@ function Write() {
 
   const createCV = async (formData) => {
     setLoading(true);
+    setLoadingMessage("Creating your CV...");
     try {
       // Check if we have a token and user
       const token = localStorage.getItem('access_token');
@@ -86,7 +110,7 @@ function Write() {
       // First, try to get the user's existing CV
       let cvId;
       try {
-        const existingCVs = await api.get("/cv_writer/cv/");
+        const existingCVs = await axiosInstance.get("/api/cv_writer/cv/");
         console.log('Existing CVs:', existingCVs.data);
         
         if (existingCVs.data && existingCVs.data.length > 0) {
@@ -95,11 +119,11 @@ function Write() {
           console.log('Using existing CV with ID:', cvId);
           
           // Update the existing CV
-          const updateResponse = await api.put(`/cv_writer/cv/${cvId}/`, personalInfo);
+          const updateResponse = await axiosInstance.put(`/api/cv_writer/cv/${cvId}/`, personalInfo);
           console.log('CV Update Response:', updateResponse.data);
         } else {
           // Create a new CV
-          const createResponse = await api.post("/cv_writer/cv/", personalInfo);
+          const createResponse = await axiosInstance.post("/api/cv_writer/cv/", personalInfo);
           console.log('CV Create Response:', createResponse.data);
           
           // Try to get the CV ID from the response or fetch it again
@@ -107,7 +131,7 @@ function Write() {
             cvId = createResponse.data.id;
           } else {
             // If we didn't get the ID in the response, fetch the CV list again
-            const newCVs = await api.get("/cv_writer/cv/");
+            const newCVs = await axiosInstance.get("/api/cv_writer/cv/");
             if (newCVs.data && newCVs.data.length > 0) {
               cvId = newCVs.data[0].id;
             } else {
@@ -125,7 +149,7 @@ function Write() {
         throw new Error('Failed to get CV ID');
       }
 
-      // Create education records
+      setLoadingMessage("Adding education details...");
       if (formData.education && formData.education.length > 0) {
         for (const edu of formData.education) {
           const educationData = {
@@ -136,12 +160,12 @@ function Write() {
             end_date: edu.current ? null : formatDate(edu.end_date),
           };
           console.log('Sending education data:', educationData);
-          const eduResponse = await api.post("/cv_writer/education/", educationData);
+          const eduResponse = await axiosInstance.post("/api/cv_writer/education/", educationData);
           console.log('Education response:', eduResponse);
         }
       }
 
-      // Create experience records
+      setLoadingMessage("Adding work experience...");
       if (formData.experience && formData.experience.length > 0) {
         for (const exp of formData.experience) {
           const experienceData = {
@@ -155,12 +179,12 @@ function Write() {
             employment_type: exp.employment_type || "Full-time",
           };
           console.log('Sending experience data:', experienceData);
-          const expResponse = await api.post("/cv_writer/experience/", experienceData);
+          const expResponse = await axiosInstance.post("/api/cv_writer/experience/", experienceData);
           console.log('Experience response:', expResponse);
         }
       }
 
-      // Create skills records
+      setLoadingMessage("Adding skills...");
       if (formData.skills && formData.skills.length > 0) {
         for (const skill of formData.skills) {
           const skillData = {
@@ -170,12 +194,12 @@ function Write() {
             user: user.pk || user.id,
           };
           console.log('Sending skill data:', skillData);
-          const skillResponse = await api.post("/cv_writer/skill/", skillData);
+          const skillResponse = await axiosInstance.post("/api/cv_writer/skill/", skillData);
           console.log('Skill response:', skillResponse);
         }
       }
 
-      // Create certification records
+      setLoadingMessage("Adding certifications...");
       if (formData.certification && formData.certification.length > 0) {
         for (const cert of formData.certification) {
           const certificationData = {
@@ -188,21 +212,21 @@ function Write() {
             user: user.pk || user.id,
           };
           console.log('Sending certification data:', certificationData);
-          const certResponse = await api.post("/cv_writer/certification/", certificationData);
+          const certResponse = await axiosInstance.post("/api/cv_writer/certification/", certificationData);
           console.log('Certification response:', certResponse);
         }
       }
 
-      // Create professional summary records
+      setLoadingMessage("Adding professional summary...");
       if (formData.professionalSummary) {
-        await api.post("/cv_writer/professional-summary/", { 
+        await axiosInstance.post("/api/cv_writer/professional-summary/", { 
           summary: formData.professionalSummary,
           cv: cvId,
           user: user.pk || user.id,
         });
       }
 
-      // Create interest records
+      setLoadingMessage("Adding interests...");
       if (formData.interests && formData.interests.length > 0) {
         for (const interest of formData.interests) {
           const interestData = { 
@@ -211,12 +235,12 @@ function Write() {
             user: user.pk || user.id,
           };
           console.log('Sending interest data:', interestData);
-          const interestResponse = await api.post("/cv_writer/interest/", interestData);
+          const interestResponse = await axiosInstance.post("/api/cv_writer/interest/", interestData);
           console.log('Interest response:', interestResponse);
         }
       }
 
-      // Create language records
+      setLoadingMessage("Adding languages...");
       if (formData.language && formData.language.length > 0) {
         for (const lang of formData.language) {
           const languageData = {
@@ -226,12 +250,12 @@ function Write() {
             user: user.pk || user.id,
           };
           console.log('Sending language data:', languageData);
-          const langResponse = await api.post("/cv_writer/language/", languageData);
+          const langResponse = await axiosInstance.post("/api/cv_writer/language/", languageData);
           console.log('Language response:', langResponse);
         }
       }
 
-      // Create reference records
+      setLoadingMessage("Adding references...");
       if (formData.reference && formData.reference.length > 0) {
         for (const ref of formData.reference) {
           const referenceData = {
@@ -245,28 +269,86 @@ function Write() {
             user: user.pk || user.id,
           };
           console.log('Sending reference data:', referenceData);
-          const refResponse = await api.post("/cv_writer/reference/", referenceData);
+          const refResponse = await axiosInstance.post("/api/cv_writer/reference/", referenceData);
           console.log('Reference response:', refResponse);
         }
       }
 
-      // Create social media records
+      setLoadingMessage("Adding social media...");
       if (formData.socialMedia && formData.socialMedia.length > 0) {
         for (const social of formData.socialMedia) {
-          const socialData = {
-            platform: social.platform,
-            url: social.url,
-            cv: cvId,
-            user: user.pk || user.id,
-          };
-          console.log('Sending social media data:', socialData);
-          const socialResponse = await api.post("/cv_writer/social-media/", socialData);
-          console.log('Social media response:', socialResponse);
+          try {
+            // First try to get existing social media entry
+            const existingResponse = await axiosInstance.get('/api/cv_writer/social-media/', {
+              params: {
+                platform: social.platform,
+                user: user.pk || user.id
+              }
+            });
+
+            const socialData = {
+              platform: social.platform,
+              url: social.url,
+              cv: cvId,
+              user: user.pk || user.id,
+            };
+
+            if (existingResponse.data && existingResponse.data.length > 0) {
+              // Update existing entry
+              const existingId = existingResponse.data[0].id;
+              await axiosInstance.put(`/api/cv_writer/social-media/${existingId}/`, socialData);
+            } else {
+              // Create new entry
+              await axiosInstance.post("/api/cv_writer/social-media/", socialData);
+            }
+          } catch (error) {
+            console.error('Error managing social media:', error);
+            // Continue with other social media entries even if one fails
+          }
         }
       }
 
-      console.log("CV created successfully!");
-      navigate("/"); // Redirect to home page after successful creation
+      // Start CV improvement process
+      setLoadingMessage("Improving your CV with AI...");
+      try {
+        // First, ensure the CV exists
+        const cvResponse = await axiosInstance.get(`/api/cv_writer/cv/${cvId}/`);
+        console.log("CV data:", cvResponse.data);
+
+        // Start the improvement process with specific sections
+        const improvementResponse = await axiosInstance.post(`/api/cv_writer/cv/${cvId}/improve/`, {
+          sections: [
+            "professional_summary",
+            "experience",
+            "education",
+            "skills"
+          ],
+          improvement_type: "enhance",
+          tone: "professional"
+        });
+        console.log("CV improvement started:", improvementResponse.data);
+        
+        // Get improvement history to confirm it started
+        const historyResponse = await axiosInstance.get(`/api/cv_writer/cv/${cvId}/improvement-history/`);
+        console.log("CV improvement history:", historyResponse.data);
+        
+        // Navigate to preview page with success message
+        navigate(`/cv-writer/preview/${cvId}`, { 
+          state: { 
+            message: "Your CV has been created and is being improved by AI. You'll be notified when the improvements are ready.",
+            type: "success"
+          }
+        });
+      } catch (error) {
+        console.error("Error during CV improvement:", error);
+        // Still navigate to preview, but with error message
+        navigate(`/cv-writer/preview/${cvId}`, {
+          state: {
+            message: "Your CV was created but there was an error starting the AI improvement. You can try improving it later.",
+            type: "error"
+          }
+        });
+      }
     } catch (error) {
       console.error("Error creating CV:", error.response?.data || error.message);
       if (error.response?.status === 401) {
@@ -277,6 +359,7 @@ function Write() {
       }
     } finally {
       setLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -287,6 +370,12 @@ function Write() {
       </Header>
 
       <CVFormContainer onCVCreated={createCV} isLoading={loading} />
+
+      {loading && (
+        <LoadingOverlay>
+          <LoadingText>{loadingMessage}</LoadingText>
+        </LoadingOverlay>
+      )}
     </Container>
   );
 }

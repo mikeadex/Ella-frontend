@@ -77,9 +77,9 @@ export const ModernHeader = ({ name, profession, contacts }) => {
                     <Profession>{profession}</Profession>
                 </div>
                 <ContactList>
-                    {contacts.map((contact, index) => (
+                    {contacts && contacts.map((contact, index) => (
                         <ContactItem key={index}>
-                            <i className={contact.icon} />
+                            <i className={`fa-solid fa-${contact.icon}`} />
                             <span>{contact.value}</span>
                         </ContactItem>
                     ))}

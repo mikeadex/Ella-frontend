@@ -29,6 +29,7 @@ const ProfileWrapper = styled(Card)`
 
   @media (max-width: ${breakpoints.mobile}) {
     padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
   }
 
   &::before {
@@ -56,6 +57,10 @@ const ProfileContent = styled.div`
     align-items: center;
     text-align: center;
     gap: var(--spacing-xl);
+  }
+
+  @media (max-width: ${breakpoints.mobile}) {
+    gap: var(--spacing-lg);
   }
 `;
 
@@ -106,6 +111,13 @@ const ProfileInfo = styled.div`
 
   @media (max-width: ${breakpoints.tablet}) {
     padding-top: 0;
+    gap: var(--spacing-md);
+  }
+`;
+
+const StyledH1 = styled(H1)`
+  @media (max-width: ${breakpoints.mobile}) {
+    margin-bottom: var(--spacing-xs);
   }
 `;
 
@@ -124,6 +136,7 @@ const Profession = styled(Text)`
 
   @media (max-width: ${breakpoints.mobile}) {
     font-size: 1.1em;
+    margin-bottom: var(--spacing-sm);
   }
 `;
 
@@ -139,6 +152,7 @@ const SocialLinks = styled.div`
 
   @media (max-width: ${breakpoints.mobile}) {
     gap: var(--spacing-sm);
+    margin-top: 0;
   }
 `;
 
@@ -149,11 +163,11 @@ export const ProfileSection = ({ name, profession, image, socials }) => (
         <img src={image} alt={`${name}'s profile`} />
       </ProfileImage>
       <ProfileInfo>
-        <H1>{name}</H1>
+        <StyledH1>{name}</StyledH1>
         <Profession>{profession}</Profession>
         <SocialLinks>
-          {socials.map((social) => (
-            <SocialLink key={social.platform} {...social} />
+          {socials?.map((social, index) => (
+            <SocialLink key={index} {...social} />
           ))}
         </SocialLinks>
       </ProfileInfo>
