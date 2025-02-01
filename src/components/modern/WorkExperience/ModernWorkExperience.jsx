@@ -73,27 +73,48 @@ const AchievementBullet = styled.span`
   line-height: 1.4;
 `;
 
-export const ModernWorkExperience = ({ experiences = [] }) => (
-    <ExperienceList>
-        {experiences.map((exp, index) => (
-            <ExperienceItem key={index}>
-                <JobTitle>{exp.title}</JobTitle>
-                <EmployerInfo>
-                    {exp.company} | {exp.period} | {exp.location}
-                </EmployerInfo>
-                <JobDescription>{exp.description}</JobDescription>
-                <AchievementsSection>
-                    <AchievementsTitle>Key Achievements</AchievementsTitle>
-                    <AchievementsList>
-                        {exp.responsibilities && exp.responsibilities.map((achievement, idx) => (
-                            <AchievementItem key={idx}>
-                                <AchievementBullet>•</AchievementBullet>
-                                {achievement}
-                            </AchievementItem>
-                        ))}
-                    </AchievementsList>
-                </AchievementsSection>
-            </ExperienceItem>
-        ))}
-    </ExperienceList>
-);
+export const ModernWorkExperience = ({ experiences = [] }) => {
+    console.log('ModernWorkExperience received:', experiences);
+    
+    if (!experiences || experiences.length === 0) {
+        console.warn('No experiences provided to ModernWorkExperience');
+        return null;
+    }
+
+    return (
+        <ExperienceList>
+            {experiences.map((exp, index) => {
+                console.log(`Experience ${index}:`, exp);
+                
+                // Validate required fields
+                if (!exp.title || !exp.company) {
+                    console.warn(`Skipping experience ${index} due to missing title or company`, exp);
+                    return null;
+                }
+
+                return (
+                    <ExperienceItem key={index}>
+                        <JobTitle>{exp.title}</JobTitle>
+                        <EmployerInfo>
+                            {exp.company} {exp.period ? `| ${exp.period}` : ''} {exp.location ? `| ${exp.location}` : ''}
+                        </EmployerInfo>
+                        {exp.description && <JobDescription>{exp.description}</JobDescription>}
+                        {exp.responsibilities && exp.responsibilities.length > 0 && (
+                            <AchievementsSection>
+                                <AchievementsTitle>Key Achievements</AchievementsTitle>
+                                <AchievementsList>
+                                    {exp.responsibilities.map((achievement, idx) => (
+                                        <AchievementItem key={idx}>
+                                            <AchievementBullet>•</AchievementBullet>
+                                            {achievement}
+                                        </AchievementItem>
+                                    ))}
+                                </AchievementsList>
+                            </AchievementsSection>
+                        )}
+                    </ExperienceItem>
+                );
+            })}
+        </ExperienceList>
+    );
+};

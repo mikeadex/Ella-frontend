@@ -1,153 +1,211 @@
-import React from 'react';
-import { Box, Typography, Paper, Divider, Grid, Chip, List, ListItem, ListItemText, CircularProgress, Alert } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import React, { useEffect } from 'react';
+import styled, { ThemeProvider } from 'styled-components';
 import DOMPurify from 'dompurify';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import {ModernHeader} from '../modern/Header/ModernHeader';
+import { modernTheme } from '../../styles/theme/modern';
+import { Container } from '../modern/Layout/Container';
+import { ModernHeader } from '../modern/Header/ModernHeader';
+import { ModernSection } from '../modern/Section/ModernSection';
+import { ModernEducation } from '../modern/Education/ModernEducation';
+import { ModernWorkExperience } from '../modern/WorkExperience/ModernWorkExperience';
+import { Skills } from '../layout/Skills';
+import { SocialMedia } from '../layout/SocialMedia';
+import { ModernInterestsAndLanguages } from '../modern/InterestsAndLanguages/ModernInterestsAndLanguages';
+import { ModernCertifications } from '../modern/Certifications/ModernCertifications';
 
-const PreviewSection = styled('div')(({ theme }) => ({
-  marginBottom: theme.spacing(3),
-}));
+const ResumeContent = styled.main`
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+`;
 
-const PreviewPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-}));
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+`;
 
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  fontWeight: 600,
-}));
+const Summary = styled.p`
+  font-size: 1em;
+  line-height: 1.8;
+  color: var(--text-light);
+
+  @media (max-width: 768px) {
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.9em;
+    line-height: 1.5;
+  }
+`;
 
 const CVPreview = ({ cvData, loading, error }) => {
+  useEffect(() => {
+    console.log('CVData in Preview:', cvData);
+    console.log('Work Experience:', cvData?.workExperience);
+  }, [cvData]);
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
-      </Box>
+      <ThemeProvider theme={modernTheme}>
+        <Container>
+          <div>Loading...</div>
+        </Container>
+      </ThemeProvider>
     );
   }
 
   if (error) {
     return (
-      <Box p={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
+      <ThemeProvider theme={modernTheme}>
+        <Container>
+          <div>Error: {error}</div>
+        </Container>
+      </ThemeProvider>
     );
   }
 
   if (!cvData) {
     return (
-      <Box p={3}>
-        <Alert severity="info">No CV data available</Alert>
-      </Box>
+      <ThemeProvider theme={modernTheme}>
+        <Container>
+          <div>No CV data available</div>
+        </Container>
+      </ThemeProvider>
     );
   }
 
-  const { profile, contacts, education, skills, professionalSummary, workExperience } = cvData;
+  const { 
+    profile, 
+    contacts, 
+    education, 
+    skills, 
+    professionalSummary, 
+    workExperience,
+    socialMedia,
+    interestsAndLanguages = { interests: [], languages: [] },
+    certifications = []
+  } = cvData;
+
+  const { 
+    interests = interestsAndLanguages.interests, 
+    languages = interestsAndLanguages.languages 
+  } = interestsAndLanguages;
+
+  console.log('RENDER - Work Experience:', workExperience)
 
   return (
-    <PreviewPaper>
-      <ModernHeader 
-        name={profile.name}
-        profession={profile.profession}
-        contacts={contacts}
-      />
-
-      {/* Professional Summary */}
-      {professionalSummary && (
-        <PreviewSection>
-          <SectionTitle variant="h6">Professional Summary</SectionTitle>
-          <Typography 
-            dangerouslySetInnerHTML={{ 
-              __html: DOMPurify.sanitize(professionalSummary) 
-            }} 
-          />
-        </PreviewSection>
-      )}
-
-      {/* Work Experience */}
-      {workExperience && workExperience.length > 0 && (
-        <PreviewSection>
-          <SectionTitle variant="h6">Work Experience</SectionTitle>
-          {workExperience.map((exp, index) => (
-            <Box key={index} mb={2}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {exp.title} at {exp.company}
-              </Typography>
-              <Typography variant="subtitle2" color="textSecondary">
-                {exp.period}
-              </Typography>
-              {exp.responsibilities && (
-                <List dense>
-                  {exp.responsibilities.map((resp, idx) => (
-                    <ListItem key={idx}>
-                      <ListItemText primary={resp} />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-              {exp.achievements && exp.achievements.length > 0 && (
-                <Box mt={1}>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Key Achievements:
-                  </Typography>
-                  <List dense>
-                    {exp.achievements.map((achievement, idx) => (
-                      <ListItem key={idx}>
-                        <ListItemText primary={achievement} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-              )}
-            </Box>
-          ))}
-        </PreviewSection>
-      )}
-
-      {/* Education */}
-      {education && education.length > 0 && (
-        <PreviewSection>
-          <SectionTitle variant="h6">Education</SectionTitle>
-          {education.map((edu, index) => (
-            <Box key={index} mb={2}>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {edu.degree}
-              </Typography>
-              <Typography variant="subtitle2">
-                {edu.institution}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                {edu.year}
-              </Typography>
-              {edu.details && (
-                <Typography variant="body2">{edu.details}</Typography>
-              )}
-            </Box>
-          ))}
-        </PreviewSection>
-      )}
-
-      {/* Skills */}
-      {skills && skills.length > 0 && (
-        <PreviewSection>
-          <SectionTitle variant="h6">Skills</SectionTitle>
-          <Grid container spacing={1}>
-            {skills.map((skill, index) => (
-              <Grid item key={index}>
-                <Chip 
-                  label={skill.name} 
-                  variant="outlined"
-                  size="small"
+    <ThemeProvider theme={modernTheme}>
+      <Container>
+        <ModernHeader 
+          name={profile.name} 
+          profession={profile.profession}
+          contacts={[
+            ...(profile.email ? [{ icon: 'envelope', value: profile.email }] : []),
+            ...(profile.contact_number ? [{
+              icon: 'phone', 
+              value: profile.contact_number
+            }] : []),
+            ...(contacts || [])
+          ]}
+          socialMedia={socialMedia}
+        />
+        <ResumeContent>
+          <MainContent>
+            {professionalSummary && (
+              <ModernSection title="Professional Summary">
+                <Summary 
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(professionalSummary) 
+                  }} 
                 />
-              </Grid>
-            ))}
-          </Grid>
-        </PreviewSection>
-      )}
-    </PreviewPaper>
+              </ModernSection>
+            )}
+
+            {education && education.length > 0 && (
+              <ModernSection title="Education">
+                <ModernEducation educationList={education} />
+              </ModernSection>
+            )}
+
+            {workExperience && (
+              console.log('Work Experience Details:', 
+                workExperience.map(exp => ({
+                  jobTitle: exp.job_title,
+                  companyName: exp.company_name,
+                  achievements: exp.achievements
+                }))
+              )
+            )}
+
+            {workExperience && workExperience.length > 0 && (
+              <ModernSection title="Work Experience">
+                <div>
+                  <ModernWorkExperience 
+                    experiences={workExperience.map(exp => {
+                      // Attempt to parse achievements if it's a string with HTML
+                      const parseAchievements = (achievementsData) => {
+                        if (!achievementsData) return [];
+                        
+                        if (typeof achievementsData === 'string') {
+                          // Remove HTML tags
+                          const strippedAchievements = achievementsData.replace(/<[^>]*>/g, '');
+                          
+                          // Split by common delimiters
+                          return strippedAchievements.split(/[.;]\s*/).filter(a => a.trim());
+                        }
+                        
+                        // If it's already an array, return it
+                        return Array.isArray(achievementsData) 
+                          ? achievementsData 
+                          : [];
+                      };
+
+                      return {
+                        title: exp.job_title,
+                        company: exp.company_name,
+                        description: exp.job_description,
+                        responsibilities: parseAchievements(exp.achievements),
+                        period: exp.period,
+                        location: exp.location
+                      };
+                    })} 
+                  />
+                </div>
+              </ModernSection>
+            )}
+
+            {certifications.length > 0 && (
+              <ModernSection title="Certifications">
+                <ModernCertifications certifications={certifications} />
+              </ModernSection>
+            )}
+
+            {/* {socialMedia && socialMedia.length > 0 && (
+              <ModernSection title="Social Media">
+                <SocialMedia socialMedia={socialMedia} />
+              </ModernSection>
+            )} */}
+
+            {skills && skills.length > 0 && (
+              <ModernSection title="Skills">
+                <Skills skills={skills} />
+              </ModernSection>
+            )}
+
+            {(interests.length > 0 || languages.length > 0) && (
+              <ModernSection title="Interests and Languages">
+                <ModernInterestsAndLanguages 
+                  interests={interests}
+                  languages={languages}
+                />
+              </ModernSection>
+            )}
+          </MainContent>
+        </ResumeContent>
+      </Container>
+    </ThemeProvider>
   );
 };
 

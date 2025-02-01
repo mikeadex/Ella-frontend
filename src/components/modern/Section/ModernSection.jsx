@@ -1,4 +1,5 @@
 // src/components/modern/Section/ModernSection.jsx
+import React from 'react';
 import styled from 'styled-components';
 
 const SectionWrapper = styled.section`
