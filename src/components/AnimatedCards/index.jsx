@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -28,34 +27,18 @@ const cards = [
 ];
 
 const AnimatedCards = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const cardsRef = useRef([]);
   const containerRef = useRef(null);
   const ctaRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const counterRef = useRef(null);
+  const counterValueRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
     const cardElements = cardsRef.current;
     const cta = ctaRef.current;
+    const counter = counterRef.current;
+    const counterValue = counterValueRef.current;
 
     // Reset any existing ScrollTriggers
     ScrollTrigger.getAll().forEach(st => st.kill());
@@ -183,6 +166,42 @@ const AnimatedCards = () => {
     cta.addEventListener('mouseenter', () => ctaHoverTl.play());
     cta.addEventListener('mouseleave', () => ctaHoverTl.reverse());
 
+    // Counter Animation
+    const animateValue = (start, end, duration) => {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const currentValue = Math.floor(progress * (end - start) + start);
+        counterValue.textContent = currentValue.toLocaleString();
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    };
+
+    // Counter scroll trigger
+    ScrollTrigger.create({
+      trigger: counter,
+      start: 'top 80%',
+      onEnter: () => {
+        gsap.fromTo(counter,
+          {
+            y: 50,
+            opacity: 0
+          },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            ease: 'power3.out',
+            onComplete: () => animateValue(0, 25000, 2000)
+          }
+        );
+      }
+    });
+
   }, []);
 
   return (
@@ -274,6 +293,19 @@ const AnimatedCards = () => {
               />
             </svg>
           </button>
+          <div 
+            ref={counterRef}
+            className="mt-8 text-slate-600 text-lg"
+          >
+            <span>Join </span>
+            {/* <span 
+              ref={counterValueRef}
+              className="font-bold bg-gradient-to-r from-indigo-600 to-violet-600 text-transparent bg-clip-text"
+            >
+              0
+            </span> */}
+            <span> professionals who trust Ella</span>
+          </div>
         </div>
       </div>
     </div>

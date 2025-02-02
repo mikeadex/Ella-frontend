@@ -128,23 +128,36 @@ function Home() {
             {/* Main Content */}
             <div className="max-w-5xl mx-auto mb-20">
               <div className="text-center mb-16">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-medium text-sm mb-6 backdrop-blur-sm border border-indigo-100/20 dark:border-indigo-400/20"
+                >
+                  <span className="flex h-2 w-2 mr-2">
+                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-indigo-400 dark:bg-indigo-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500 dark:bg-indigo-300"></span>
+                  </span>
+                  AI-Powered CV Builder
+                </motion.div>
+
                 <motion.h1 
-                  className="font-display text-4xl sm:text-6xl font-bold tracking-tight text-center mb-8 relative"
+                  className="font-display text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight mb-6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8 }}
                 >
                   <span className="text-slate-900 dark:text-white relative">
                     Professional CV in Minutes
-                    <span className="absolute -inset-1 bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-500/10 dark:to-violet-500/10 blur-2xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-500/10 dark:to-violet-500/10 blur-2xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
                   </span>
                   <br />
-                  <span className="text-slate-900 dark:text-white relative">
+                  <span className="bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent relative">
                     Ella AI
-                    <span className="absolute -inset-1 bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-500/10 dark:to-violet-500/10 blur-2xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-100 to-violet-100 dark:from-indigo-500/10 dark:to-violet-500/10 blur-2xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
                   </span>
                 </motion.h1>
-                <motion.div 
+                
+                <motion.p 
                   className="font-display text-lg text-slate-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto mb-12 relative"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -153,8 +166,8 @@ function Home() {
                   Stand out from the crowd with Ella. An AI-powered CV builder. 
                   Create professional, ATS-friendly resumes tailored to your industry 
                   and experience level.
-                  <span className="absolute -inset-4 bg-gradient-to-r from-indigo-50/50 to-violet-50/50 dark:from-indigo-500/5 dark:to-violet-500/5 blur-xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
-                </motion.div>
+                  <div className="absolute -inset-4 bg-gradient-to-r from-indigo-50/50 to-violet-50/50 dark:from-indigo-500/5 dark:to-violet-500/5 blur-xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
+                </motion.p>
 
                 <motion.div
                   className="flex flex-wrap justify-center gap-4 mb-12"
