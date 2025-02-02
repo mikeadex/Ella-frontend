@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -51,14 +52,10 @@ export default {
       },
       fontFamily: {
         sans: [
-          'Inter',
-          'Roboto',
-          'ui-sans-serif',
-          'system-ui',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'Arial',
+          'Plus Jakarta Sans', 
+          'ui-sans-serif', 
+          'system-ui', 
+          '-apple-system', 
           'sans-serif'
         ],
         heading: [
@@ -73,10 +70,10 @@ export default {
           'sans-serif'
         ],
         display: [
-          'Montserrat',
-          'Poppins',
-          'ui-sans-serif',
-          'system-ui',
+          'Plus Jakarta Sans', 
+          'ui-sans-serif', 
+          'system-ui', 
+          '-apple-system', 
           'sans-serif'
         ],
       },
@@ -123,6 +120,39 @@ export default {
       },
       height: {
         '1.8': '1.8rem',
+      },
+      animation: {
+        'blob': 'blob 7s infinite',
+      },
+      animationDelay: {
+        '2000': '2000ms',
+        '4000': '4000ms',
+      },
+      keyframes: {
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+        },
+      },
+      perspective: {
+        '1000': '1000px',
+        '2000': '2000px',
+      },
+      transformStyle: {
+        '3d': 'preserve-3d',
+      },
+      backfaceVisibility: {
+        'hidden': 'hidden',
       },
     },
   },
