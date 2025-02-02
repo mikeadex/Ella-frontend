@@ -7,20 +7,20 @@ gsap.registerPlugin(ScrollTrigger);
 
 const cards = [
   {
-    title: 'Professional',
-    description: 'Clean, minimal design that puts your experience first',
+    title: 'Simplified',
+    description: 'Upload your existing CV or tell Ella about yourself',
     accent: '#4F46E5',
     rotation: -5
   },
   {
     title: 'Creative',
-    description: 'Stand out with a unique yet elegant presentation',
+    description: 'Rewrite your CV in one click of a button! Interesting?',
     accent: '#7C3AED',
     rotation: 0
   },
   {
-    title: 'Executive',
-    description: 'Sophisticated layout for senior positions',
+    title: 'Responsive',
+    description: 'Now your CV wont be boring! ATS ready, Employer review on the go',
     accent: '#2563EB',
     rotation: 5
   }

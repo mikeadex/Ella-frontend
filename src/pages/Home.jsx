@@ -393,7 +393,7 @@ function Home() {
                 <h2 className="text-5xl font-bold leading-tight bg-gradient-to-r from-gray-900 via-blue-800 to-purple-900 dark:from-white dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent">
                   Elevate Your Career Journey
                 </h2>
-                <p className="text-xl text-gray-700 dark:text-white leading-relaxed">
+                <p className="text-lg text-gray-700 dark:text-white leading-relaxed">
                   Transform your professional narrative with our AI-powered CV builder. 
                   Stand out in today's competitive job market with a perfectly crafted resume 
                   that highlights your unique strengths and achievements.
@@ -401,7 +401,7 @@ function Home() {
                 <div className="space-y-6">
                   {[
                     { title: "AI-Powered Optimization", desc: "Smart suggestions and ATS-friendly formatting" },
-                    { title: "Professional Templates", desc: "Elegant, industry-tested designs" },
+                    { title: "Professional Templates", desc: "Beautifully crafted, industry-tested designs" },
                     { title: "Real-Time Collaboration", desc: "Share and get feedback instantly" }
                   ].map((item, index) => (
                     <motion.div
