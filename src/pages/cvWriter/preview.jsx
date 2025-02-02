@@ -3,6 +3,8 @@ import { useParams, useLocation } from 'react-router-dom';
 import axiosInstance from '../../api/axios';
 import { sharedStyles } from '../../utils/styling';
 import Notification from '../../components/common/Notification';
+import CVSectionEditor from '../../components/CVForm/CVSectionEditor';
+import { PencilIcon } from '@heroicons/react/24/outline';
 
 const CVPreview = () => {
   const { cvId } = useParams();
@@ -10,6 +12,8 @@ const CVPreview = () => {
   const [cv, setCV] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingSection, setEditingSection] = useState(null);
+  const [editingData, setEditingData] = useState(null);
   const [notification, setNotification] = useState(
     location.state?.message ? {
       type: location.state.type || 'info',
@@ -17,22 +21,47 @@ const CVPreview = () => {
     } : null
   );
 
-  useEffect(() => {
-    const fetchCV = async () => {
-      try {
-        const response = await axiosInstance.get(`/api/cv_writer/cv/${cvId}/`);
-        setCV(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching CV:', err);
-        setError('Failed to load CV. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCV = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/cv_writer/cv/${cvId}/`);
+      setCV(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching CV:', err);
+      setError('Failed to load CV. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCV();
   }, [cvId]);
+
+  const handleEdit = (section, data) => {
+    setEditingSection(section);
+    setEditingData(data);
+  };
+
+  const handleUpdate = async (updatedData) => {
+    await fetchCV();
+    setNotification({
+      type: 'success',
+      message: 'Successfully updated CV section'
+    });
+  };
+
+  const SectionHeader = ({ title, onEdit, data }) => (
+    <div className="flex justify-between items-center mb-4">
+      <h3 className="text-xl font-semibold">{title}</h3>
+      <button
+        onClick={() => onEdit(title, data)}
+        className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <PencilIcon className="h-5 w-5" />
+      </button>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -73,7 +102,17 @@ const CVPreview = () => {
             <div className="space-y-6">
               {/* Personal Info */}
               <section>
-                <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
+                <SectionHeader 
+                  title="Personal Information" 
+                  onEdit={handleEdit}
+                  data={{
+                    first_name: cv.first_name,
+                    last_name: cv.last_name,
+                    email: cv.email,
+                    phone: cv.phone,
+                    location: cv.location
+                  }}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-gray-600">Name</p>
@@ -96,70 +135,59 @@ const CVPreview = () => {
 
               {/* Professional Summary */}
               {cv.professional_summary && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Professional Summary</h3>
-                  <div className="prose max-w-none" 
-                    dangerouslySetInnerHTML={{ __html: cv.professional_summary }} 
+                <section>
+                  <SectionHeader 
+                    title="Professional Summary" 
+                    onEdit={handleEdit}
+                    data={{ professional_summary: cv.professional_summary }}
                   />
-                </section>
-              )}
-
-              {/* Experience */}
-              {cv.experience && cv.experience.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Experience</h3>
-                  <div className="space-y-6">
-                    {cv.experience.map((exp, index) => (
-                      <div key={index} className="border-l-4 border-blue-500 pl-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold text-lg">{exp.position}</h4>
-                            <p className="text-gray-600">{exp.company}</p>
-                            <p className="text-gray-600">{exp.location}</p>
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            {exp.start_date} - {exp.current ? 'Present' : exp.end_date}
-                          </p>
-                        </div>
-                        <div className="mt-2 prose max-w-none" 
-                          dangerouslySetInnerHTML={{ __html: exp.description }} 
-                        />
-                        {exp.achievements && (
-                          <div className="mt-4">
-                            <h5 className="font-medium text-gray-700 mb-2">Key Achievements</h5>
-                            <div className="prose max-w-none" 
-                              dangerouslySetInnerHTML={{ __html: exp.achievements }} 
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="prose max-w-none dark:prose-invert">
+                    {cv.professional_summary}
                   </div>
                 </section>
               )}
 
               {/* Education */}
               {cv.education && cv.education.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Education</h3>
+                <section>
+                  <SectionHeader 
+                    title="Education" 
+                    onEdit={handleEdit}
+                    data={cv.education}
+                  />
+                  <div className="space-y-4">
+                    {cv.education.map((edu) => (
+                      <div key={edu.id} className="border-l-4 border-indigo-500 pl-4">
+                        <h4 className="font-semibold">{edu.institution}</h4>
+                        <p className="text-gray-600">{edu.degree}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(edu.start_date).getFullYear()} - {edu.end_date ? new Date(edu.end_date).getFullYear() : 'Present'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Experience */}
+              {cv.experience && cv.experience.length > 0 && (
+                <section>
+                  <SectionHeader 
+                    title="Experience" 
+                    onEdit={handleEdit}
+                    data={cv.experience}
+                  />
                   <div className="space-y-6">
-                    {cv.education.map((edu, index) => (
-                      <div key={index} className="border-l-4 border-green-500 pl-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold text-lg">{edu.degree}</h4>
-                            <p className="text-gray-600">{edu.institution}</p>
-                            <p className="text-gray-600">{edu.field_of_study}</p>
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            {edu.start_date} - {edu.current ? 'Present' : edu.end_date}
-                          </p>
+                    {cv.experience.map((exp) => (
+                      <div key={exp.id} className="border-l-4 border-indigo-500 pl-4">
+                        <h4 className="font-semibold">{exp.position}</h4>
+                        <p className="text-gray-600">{exp.company}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(exp.start_date).getFullYear()} - {exp.end_date ? new Date(exp.end_date).getFullYear() : 'Present'}
+                        </p>
+                        <div className="mt-2 prose max-w-none dark:prose-invert">
+                          {exp.description}
                         </div>
-                        {edu.description && (
-                          <div className="mt-2 prose max-w-none" 
-                            dangerouslySetInnerHTML={{ __html: edu.description }} 
-                          />
-                        )}
                       </div>
                     ))}
                   </div>
@@ -168,159 +196,45 @@ const CVPreview = () => {
 
               {/* Skills */}
               {cv.skills && cv.skills.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Skills</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {cv.skills.map((skill, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex-grow">
-                          {skill.name}
-                        </span>
-                        {skill.level && (
-                          <span className="text-sm text-gray-500">
-                            {skill.level}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Certifications */}
-              {cv.certifications && cv.certifications.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Certifications</h3>
-                  <div className="grid gap-4">
-                    {cv.certifications.map((cert, index) => (
-                      <div key={index} className="border-l-4 border-purple-500 pl-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold">{cert.name}</h4>
-                            <p className="text-gray-600">{cert.issuing_organization}</p>
-                          </div>
-                          {cert.issue_date && (
-                            <p className="text-sm text-gray-500">
-                              {cert.issue_date}
-                              {cert.expiry_date && ` - ${cert.expiry_date}`}
-                            </p>
-                          )}
-                        </div>
-                        {cert.credential_id && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            Credential ID: {cert.credential_id}
-                          </p>
-                        )}
-                        {cert.credential_url && (
-                          <a
-                            href={cert.credential_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-sm mt-1 block"
-                          >
-                            View Certificate
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Languages */}
-              {cv.languages && cv.languages.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Languages</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {cv.languages.map((lang, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <span className="font-medium">{lang.name}</span>
-                        <span className="text-sm text-gray-600">{lang.proficiency}</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Interests */}
-              {cv.interests && cv.interests.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Interests</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {cv.interests.map((interest, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                      >
-                        {interest.name}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* References */}
-              {cv.references && cv.references.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">References</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {cv.references.map((ref, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-semibold">{ref.name}</h4>
-                        <p className="text-gray-600">{ref.position}</p>
-                        <p className="text-gray-600">{ref.company}</p>
-                        {ref.email && (
-                          <p className="text-gray-600">
-                            <span className="font-medium">Email:</span> {ref.email}
-                          </p>
-                        )}
-                        {ref.phone && (
-                          <p className="text-gray-600">
-                            <span className="font-medium">Phone:</span> {ref.phone}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Social Media */}
-              {cv.social_media && cv.social_media.length > 0 && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Social Media</h3>
-                  <div className="space-y-2">
-                    {cv.social_media.map((social, index) => (
-                      <a
-                        key={index}
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-2 text-blue-600 hover:text-blue-800"
-                      >
-                        <span className="font-medium">{social.platform}</span>
-                        <span className="text-gray-500">→</span>
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Additional Information */}
-              {cv.additional_information && (
-                <section className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Additional Information</h3>
-                  <div className="prose max-w-none" 
-                    dangerouslySetInnerHTML={{ __html: cv.additional_information }} 
+                <section>
+                  <SectionHeader 
+                    title="Skills" 
+                    onEdit={handleEdit}
+                    data={cv.skills}
                   />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {cv.skills.map((skill) => (
+                      <div key={skill.id} className="flex items-center space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <span>{skill.skill_name}</span>
+                        <span className="text-sm text-gray-500">({skill.skill_level})</span>
+                      </div>
+                    ))}
+                  </div>
                 </section>
               )}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No CV data available</p>
+            <div className="text-center py-12 text-gray-500">
+              No CV data available
+            </div>
           )}
         </div>
       </div>
+
+      {/* Section Editor Modal */}
+      <CVSectionEditor
+        isOpen={!!editingSection}
+        onClose={() => {
+          setEditingSection(null);
+          setEditingData(null);
+        }}
+        section={editingSection}
+        data={editingData}
+        cvId={cvId}
+        onUpdate={handleUpdate}
+        sectionType={editingSection?.toLowerCase().replace(/\s+/g, '')}
+      />
     </div>
   );
 };

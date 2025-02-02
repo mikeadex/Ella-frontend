@@ -156,7 +156,7 @@ const Dashboard = () => {
 
               {/* CVs Panel */}
               <Tab.Panel>
-                <div className="space-y-4">
+                <div className="mt-6">
                   {loading ? (
                     <div className="text-center py-12 text-[#424245] dark:text-gray-300">Loading...</div>
                   ) : cvs.length === 0 ? (
@@ -168,10 +168,43 @@ const Dashboard = () => {
                       {cvs.map((cv) => (
                         <div
                           key={cv.id}
-                          className="bg-[rgba(251,251,253,0.8)] dark:bg-black/80 backdrop-blur-[50px] rounded-lg p-4 shadow-sm border border-gray-200 dark:border-[#1d1d1f]"
+                          className="bg-[rgba(251,251,253,0.8)] dark:bg-black/80 backdrop-blur-[50px] rounded-lg shadow-sm border border-gray-200 dark:border-[#1d1d1f] overflow-hidden"
                         >
-                          <h3 className="text-lg font-medium text-[#1d1d1f] dark:text-white">{cv.title}</h3>
-                          <p className="mt-1 text-sm text-[#424245] dark:text-gray-300">{cv.description}</p>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-base font-medium text-[#1d1d1f] dark:text-white">
+                                  {cv.title || 'Untitled CV'}
+                                </h3>
+                                <p className="mt-1 text-sm text-[#424245] dark:text-gray-400">
+                                  Last updated: {new Date(cv.updated_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                Active
+                              </span>
+                            </div>
+                            <div className="mt-4 flex items-center text-sm text-[#424245] dark:text-gray-400">
+                              <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+                              <span>Template: {cv.template || 'Modern Professional'}</span>
+                            </div>
+                          </div>
+                          <div className="border-t border-gray-200 dark:border-[#1d1d1f] bg-[rgba(251,251,253,0.8)] dark:bg-black/80 backdrop-blur-[50px] px-4 py-3">
+                            <div className="flex justify-between space-x-2">
+                              <Link
+                                to={`/cv-writer/preview/${cv.id}`}
+                                className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                Preview
+                              </Link>
+                              <Link
+                                to={`/write/${cv.id}`}
+                                className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                Edit
+                              </Link>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -212,7 +245,7 @@ const Dashboard = () => {
                 </h2>
                 <Link
                   to="/write"
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   <PlusIcon className="h-4 w-4 mr-1" />
                   Create CV
@@ -235,25 +268,50 @@ const Dashboard = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cvs.map((cv) => (
-                    <Link
+                    <div
                       key={cv.id}
-                      to={`/write/${cv.id}`}
-                      className="block p-4 rounded-lg bg-gray-50 dark:bg-black/40 hover:bg-gray-100 dark:hover:bg-black/60 transition-colors"
+                      className="bg-white dark:bg-black/80 backdrop-blur-[50px] rounded-xl border border-gray-200 dark:border-[#1d1d1f] overflow-hidden hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-sm font-medium text-[#1d1d1f] dark:text-white">
-                            {cv.title || 'Untitled CV'}
-                          </h3>
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Last updated: {new Date(cv.updated_at).toLocaleDateString()}
-                          </p>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-base font-semibold text-[#1d1d1f] dark:text-white">
+                              {cv.title || 'Untitled CV'}
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                              Last updated: {new Date(cv.updated_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            Active
+                          </span>
                         </div>
-                        <ChartBarIcon className="h-5 w-5 text-gray-400" />
+                        
+                        <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+                          <span>Template: {cv.template || 'Modern Professional'}</span>
+                        </div>
                       </div>
-                    </Link>
+                      
+                      <div className="px-4 py-3 bg-gray-50 dark:bg-black/40 border-t border-gray-200 dark:border-[#1d1d1f]">
+                        <div className="flex justify-between space-x-2">
+                          <Link
+                            to={`/cv-writer/preview/${cv.id}`}
+                            className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          >
+                            Preview
+                          </Link>
+                          <Link
+                            to={`/write/${cv.id}`}
+                            className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          >
+                            Edit
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
