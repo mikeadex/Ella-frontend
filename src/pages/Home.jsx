@@ -26,21 +26,10 @@ function Home() {
     const cvContainer = cvContainerRef.current;
     const cv = cvRef.current;
 
-    // Function to calculate initial size based on screen width
-    const calculateInitialSize = () => {
-      const isMobile = window.innerWidth < 768;
-      return {
-        width: isMobile ? 320 : 595,
-        height: isMobile ? 600 : 842
-      };
-    };
-
-    const initialSize = calculateInitialSize();
-
     // Initial state
     gsap.set(cv, {
-      width: `${initialSize.width}px`,
-      height: `${initialSize.height}px`,
+      width: '595px',
+      height: '842px',
       borderRadius: '0px',
       transformOrigin: 'center center',
       scale: 1
@@ -55,11 +44,10 @@ function Home() {
       markers: false,
       onUpdate: (self) => {
         const progress = self.progress;
-        const currentSize = calculateInitialSize();
         
         // Calculate interpolated values
-        const width = gsap.utils.interpolate(currentSize.width, 320, progress);
-        const height = gsap.utils.interpolate(currentSize.height, 600, progress);
+        const width = gsap.utils.interpolate(595, 320, progress);
+        const height = gsap.utils.interpolate(842, 600, progress);
         const borderRadius = gsap.utils.interpolate(0, 20, progress);
         const scale = gsap.utils.interpolate(1, 0.9, progress);
         
@@ -78,7 +66,7 @@ function Home() {
 
     // Handle resize
     const handleResize = () => {
-      const newSize = calculateInitialSize();
+      const newSize = { width: 595, height: 842 };
       if (!cvScrollTrigger.progress) { // Only reset if not scrolled
         gsap.set(cv, {
           width: `${newSize.width}px`,
@@ -96,8 +84,140 @@ function Home() {
     };
   }, []);
 
+  const heroRef = useRef(null);
+  const gradientRef = useRef(null);
+  const animationRef = useRef(null);
+
+  useEffect(() => {
+    const updateGradient = (progress, x = 50, y = 50) => {
+      if (!gradientRef.current) return;
+      
+      // Define gradient colors for different scroll positions
+      const colors = {
+        start: {
+          c1: '14, 165, 233', // sky-500
+          c2: '139, 92, 246', // violet-500
+          c3: '99, 102, 241'  // indigo-500
+        },
+        end: {
+          c1: '59, 130, 246', // blue-500
+          c2: '168, 85, 247',  // purple-500
+          c3: '236, 72, 153'   // pink-500
+        }
+      };
+
+      // Interpolate between colors based on scroll progress
+      const interpolateColor = (c1, c2, progress) => {
+        const [r1, g1, b1] = c1.split(',').map(Number);
+        const [r2, g2, b2] = c2.split(',').map(Number);
+        
+        const r = Math.round(r1 + (r2 - r1) * progress);
+        const g = Math.round(g1 + (g2 - g1) * progress);
+        const b = Math.round(b1 + (b2 - b1) * progress);
+        
+        return `${r}, ${g}, ${b}`;
+      };
+
+      // Calculate interpolated colors
+      const currentC1 = interpolateColor(colors.start.c1, colors.end.c1, progress);
+      const currentC2 = interpolateColor(colors.start.c2, colors.end.c2, progress);
+      const currentC3 = interpolateColor(colors.start.c3, colors.end.c3, progress);
+
+      const opacity = document.documentElement.classList.contains('dark') ? '0.25' : '0.15';
+      
+      gradientRef.current.style.background = `
+        radial-gradient(circle at ${x}% ${y}%, 
+          rgba(${currentC1}, ${opacity}) 0%, 
+          rgba(${currentC2}, ${opacity}) 15%, 
+          rgba(${currentC3}, ${opacity}) 30%, 
+          transparent 45%
+        )
+      `;
+    };
+
+    // Autonomous movement animation
+    let startTime = Date.now();
+    const radius = window.innerWidth < 768 ? 15 : 20; // Smaller radius on mobile
+    const speed = window.innerWidth < 768 ? 3000 : 5000; // Faster on mobile
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = ScrollTrigger.getById('heroGradient')?.progress || 0;
+      
+      // Calculate position using sine waves for smooth movement
+      const x = 50 + radius * Math.sin(elapsed / speed);
+      const y = 50 + radius * Math.cos((elapsed / speed) * 1.3); // Different frequency for y
+      
+      updateGradient(progress, x, y);
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start animation
+    animate();
+
+    // Handle mouse movement on non-touch devices
+    const handleMouseMove = (e) => {
+      if (window.matchMedia('(hover: hover)').matches) {
+        if (!heroRef.current) return;
+        
+        const rect = heroRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        const progress = ScrollTrigger.getById('heroGradient')?.progress || 0;
+        updateGradient(progress, x, y);
+        
+        // Pause autonomous animation while mouse is moving
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        
+        // Resume autonomous animation after mouse stops moving
+        startTime = Date.now(); // Reset time to prevent jumping
+        setTimeout(() => {
+          if (!animationRef.current) {
+            animate();
+          }
+        }, 2000);
+      }
+    };
+
+    // Set up GSAP scroll trigger
+    const trigger = gsap.to(heroRef.current, {
+      scrollTrigger: {
+        id: 'heroGradient',
+        trigger: heroRef.current,
+        start: 'top 60%',
+        end: '+=200',
+        scrub: true,
+        markers: false,
+        onUpdate: (self) => {
+          const progress = self.progress;
+          // Don't update position here, let the animation handle it
+          updateGradient(progress);
+        },
+      },
+    });
+
+    // Add mouse move listener
+    if (heroRef.current) {
+      heroRef.current.addEventListener('mousemove', handleMouseMove);
+    }
+
+    // Cleanup
+    return () => {
+      if (heroRef.current) {
+        heroRef.current.removeEventListener('mousemove', handleMouseMove);
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      trigger.kill();
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gradient-to-b dark:from-gray-900 dark:to-black transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-black transition-colors duration-300">
       <Helmet>
         <title>Ella - Professional CV Builder</title>
       </Helmet>
@@ -109,21 +229,37 @@ function Home() {
         </Suspense>
 
         {/* Hero Section */}
-        <section className="relative pt-24 md:pt-32 pb-6 md:pb-12 overflow-hidden bg-slate-50 dark:bg-black">
-          {/* Background Elements */}
-          <div className="absolute inset-0">
-            {/* Grid Pattern */}
-            <div className="absolute inset-0 bg-[url('/assets/grid.svg')] opacity-[0.02] dark:opacity-[0.05]" />
-            
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/50 to-slate-50 dark:via-black/50 dark:to-black" />
-            
-            {/* Animated Blobs */}
-            <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-blue-200/30 dark:bg-blue-500/[0.07] rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-20 animate-blob" />
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-200/30 dark:bg-purple-500/[0.07] rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-            <div className="absolute -bottom-32 left-[25%] w-[600px] h-[600px] bg-blue-200/30 dark:bg-blue-500/[0.07] rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
-          </div>
+        <section 
+          ref={heroRef} 
+          className="relative min-h-screen flex items-center justify-center overflow-hidden py-20 sm:py-32 lg:pb-32 xl:pb-36"
+        >
+          {/* Gradient Morph */}
+          <div 
+            ref={gradientRef}
+            className="absolute inset-0 transition-all duration-300 ease-out z-10"
+            style={{
+              background: `
+                radial-gradient(circle at 50% 50%, 
+                  rgba(14, 165, 233, 0.15) 0%, 
+                  rgba(139, 92, 246, 0.15) 15%, 
+                  rgba(99, 102, 241, 0.15) 30%, 
+                  transparent 45%
+                )
+              `,
+              mixBlendMode: 'lighter'
+            }}
+          />
 
+          {/* Subtle Grid Pattern */}
+          {/* <div 
+            className="absolute inset-0 z-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23${document.documentElement.classList.contains('dark') ? '1d1d1f' : 'a0aec0'}' fill-opacity='0.03'%3E%3Cpath d='M30 30h60v60H30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              backgroundSize: '30px 30px'
+            }}
+          /> */}
+
+          {/* Content */}
           <div className="container mx-auto px-4 relative z-10">
             {/* Main Content */}
             <div className="max-w-5xl mx-auto mb-20">
@@ -131,6 +267,7 @@ function Home() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
                   className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-medium text-sm mb-6 backdrop-blur-sm border border-indigo-100/20 dark:border-indigo-400/20"
                 >
                   <span className="flex h-2 w-2 mr-2">
@@ -157,17 +294,19 @@ function Home() {
                   </span>
                 </motion.h1>
                 
-                <motion.p 
-                  className="font-display text-lg text-slate-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto mb-12 relative"
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2, duration: 0.8 }}
+                  className="relative"
                 >
-                  Stand out from the crowd with Ella. An AI-powered CV builder. 
-                  Create professional, ATS-friendly resumes tailored to your industry 
-                  and experience level.
+                  <p className="font-display text-lg text-slate-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto mb-12">
+                    Stand out from the crowd with Ella. An AI-powered CV builder. 
+                    Create professional, ATS-friendly resumes tailored to your industry 
+                    and experience level.
+                  </p>
                   <div className="absolute -inset-4 bg-gradient-to-r from-indigo-50/50 to-violet-50/50 dark:from-indigo-500/5 dark:to-violet-500/5 blur-xl opacity-20 mix-blend-multiply dark:mix-blend-overlay" />
-                </motion.p>
+                </motion.div>
 
                 <motion.div
                   className="flex flex-wrap justify-center gap-4 mb-12"
@@ -308,25 +447,32 @@ function Home() {
                 transition={{ duration: 0.8 }}
                 className="relative"
               >
-                <div className="relative aspect-square rounded-2xl overflow-hidden bg-white/80 dark:bg-black backdrop-blur-sm shadow-2xl border border-gray-100 dark:border-gray-700">
+                <div className="relative aspect-square rounded-2xl overflow-hidden bg-white/80 dark:bg-black backdrop-blur-sm shadow-2xl border border-gray-100 dark:border-gray-800">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/20 dark:to-black" />
                   <div className="relative p-8 h-full flex flex-col">
                     {/* Mock CV Preview */}
                     <div className="flex-1 space-y-6">
                       <div className="h-8 w-3/4 bg-gradient-to-r from-blue-200 to-purple-200 dark:from-gray-900 dark:to-black rounded-lg animate-pulse" />
                       <div className="space-y-3">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-5/6" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-4/6" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-3/6" />
+                        {[...Array(3)].map((_, i) => (
+                          <div 
+                            key={i} 
+                            className="space-y-2"
+                          >
+                            <div className="h-3 md:h-4 w-full bg-gray-100 dark:bg-gray-900 rounded" />
+                            <div className="h-3 md:h-4 w-5/6 bg-gray-100 dark:bg-gray-900 rounded" />
+                            <div className="h-3 md:h-4 w-4/6 bg-gray-100 dark:bg-gray-900 rounded" />
+                          </div>
+                        ))}
                       </div>
                       <div className="pt-4 space-y-3">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-5/6" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-4/6" />
+                        <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-5/6" />
+                        <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-4/6" />
                       </div>
                       <div className="pt-4 space-y-3">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-5/6" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-4/6" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-900 rounded w-3/6" />
+                        <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-5/6" />
+                        <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-4/6" />
+                        <div className="h-4 bg-gray-100 dark:bg-gray-900 rounded w-3/6" />
                       </div>
                     </div>
                     {/* Interactive Elements */}
