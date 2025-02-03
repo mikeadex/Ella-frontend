@@ -29,7 +29,7 @@ const StyledBox = styled(Box).attrs({
   })
 })``;
 
-const CVVersionCard = ({ version, onSetPrimary, onClone, onDelete }) => {
+const CVVersionCard = ({ version, onSetPrimary, onClone, onDelete, onEdit }) => {
   const isPrimary = version.is_primary;
 
   return (
@@ -80,6 +80,13 @@ const CVVersionCard = ({ version, onSetPrimary, onClone, onDelete }) => {
         >
           Clone
         </Button>
+        <Button 
+          size="small" 
+          color="warning" 
+          onClick={() => onEdit(version)}
+        >
+          Edit
+        </Button>
         {!isPrimary && (
           <Button 
             size="small" 
@@ -120,6 +127,8 @@ export const CVVersionManager = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newVersionName, setNewVersionName] = useState('');
   const [newVersionPurpose, setNewVersionPurpose] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingVersion, setEditingVersion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -243,56 +252,66 @@ export const CVVersionManager = () => {
     }
   };
 
+  const handleEditVersion = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.patch(`/cv_writer/cv/versions/${editingVersion.id}/edit/`, {
+        version_name: editingVersion.version_name,
+        version_purpose: editingVersion.version_purpose,
+        visibility: editingVersion.visibility || 'private'
+      });
+      
+      console.log('Edit Version Response:', response.data);
+      
+      // Refresh versions list
+      fetchVersions();
+      
+      // Close dialog and reset fields
+      setIsEditDialogOpen(false);
+      setEditingVersion(null);
+      setError(null);
+    } catch (error) {
+      console.error('Error editing CV version:', error);
+      
+      const errorMessage = error.response?.data?.detail || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           'Failed to edit CV version. Please try again.';
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditDialog = (version) => {
+    // Ensure a valid version object is passed
+    if (!version || !version.id) {
+      console.error('Invalid version object', version);
+      return;
+    }
+
+    // Create a new object with default values
+    setEditingVersion({
+      id: version.id,
+      version_name: version.version_name || '',
+      version_purpose: version.version_purpose || '',
+      visibility: version.visibility || 'private'
+    });
+    setIsEditDialogOpen(true);
+  };
+
   // Render method with version details
   const renderVersions = () => {
     return versions.map((version) => (
-      <Card key={version.id} sx={{ mb: 2, p: 2 }}>
-        <CardContent>
-          <Typography variant="h6">
-            {version.title}
-            {version.is_primary && (
-              <Chip 
-                label="Primary" 
-                color="primary" 
-                size="small" 
-                sx={{ ml: 1 }} 
-              />
-            )}
-          </Typography>
-          
-          {version.version_name && (
-            <Typography variant="subtitle1" color="text.secondary">
-              Version Name: {version.version_name}
-            </Typography>
-          )}
-          
-          {version.version_purpose && (
-            <Typography variant="body2" color="text.secondary">
-              Purpose: {version.version_purpose}
-            </Typography>
-          )}
-          
-          <Typography variant="caption">
-            Created: {new Date(version.created_at).toLocaleDateString()}
-          </Typography>
-          
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-            {!version.is_primary && (
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                onClick={() => handleSetPrimaryVersion(version.id)}
-              >
-                Set as Primary
-              </Button>
-            )}
-            
-            <Button variant="outlined" color="secondary">
-              Edit Version
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+      <CVVersionCard 
+        key={version.id} 
+        version={version} 
+        onSetPrimary={handleSetPrimaryVersion} 
+        onClone={handleCloneVersion} 
+        onDelete={handleDeleteVersion} 
+        onEdit={openEditDialog} 
+      />
     ));
   };
 
@@ -336,6 +355,65 @@ export const CVVersionManager = () => {
       </DialogActions>
     </Dialog>
   );
+
+  // Dialog for editing a version
+  const renderEditVersionDialog = () => {
+    // Ensure editingVersion is not null
+    if (!editingVersion) return null;
+
+    return (
+      <Dialog 
+        open={isEditDialogOpen} 
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingVersion(null);
+        }}
+      >
+        <DialogTitle>Edit CV Version</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Version Name"
+            fullWidth
+            value={editingVersion.version_name || ''}
+            onChange={(e) => setEditingVersion(prev => ({
+              ...prev, 
+              version_name: e.target.value
+            }))}
+            placeholder="e.g., Tech Startup Version"
+          />
+          <TextField
+            margin="dense"
+            label="Version Purpose"
+            fullWidth
+            multiline
+            rows={3}
+            value={editingVersion.version_purpose || ''}
+            onChange={(e) => setEditingVersion(prev => ({
+              ...prev, 
+              version_purpose: e.target.value
+            }))}
+            placeholder="Describe the specific purpose of this CV version"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setIsEditDialogOpen(false);
+            setEditingVersion(null);
+          }}>Cancel</Button>
+          <Button 
+            onClick={handleEditVersion} 
+            color="primary" 
+            variant="contained"
+            disabled={!editingVersion.version_name}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
 
   useEffect(() => {
     // Only fetch versions if authentication is complete and user is authenticated
@@ -411,6 +489,7 @@ export const CVVersionManager = () => {
       </Button>
 
       {renderCreateVersionDialog()}
+      {renderEditVersionDialog()}
     </StyledBox>
   );
 };
