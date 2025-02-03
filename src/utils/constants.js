@@ -118,33 +118,63 @@ export const getAllFieldsOfStudy = () => {
 
 export const SKILL_CATEGORIES = [
   {
-    name: "Technical Skills",
+    name: 'Soft Skills',
     skills: [
-      "JavaScript", "Python", "Java", "C++", "React", "Node.js", "SQL", "Git",
-      "Docker", "AWS", "Azure", "Machine Learning", "Data Analysis", "DevOps",
-      "Cloud Computing", "Cybersecurity", "UI/UX Design", "Mobile Development"
+      'Communication',
+      'Teamwork',
+      'Problem Solving',
+      'Leadership',
+      'Adaptability',
+      'Time Management',
+      'Creativity',
+      'Emotional Intelligence',
+      'Conflict Resolution',
+      'Critical Thinking',
+      'Collaboration',
+      'Negotiation',
+      'Empathy',
+      'Active Listening',
+      'Resilience'
     ]
   },
   {
-    name: "Soft Skills",
+    name: 'Technical Skills',
     skills: [
-      "Communication", "Leadership", "Problem Solving", "Team Work", "Time Management",
-      "Critical Thinking", "Adaptability", "Project Management", "Creativity",
-      "Emotional Intelligence", "Conflict Resolution", "Decision Making"
+      'Python',
+      'JavaScript',
+      'React',
+      'Node.js',
+      'SQL',
+      'Machine Learning',
+      'Data Analysis',
+      'Cloud Computing',
+      'Docker',
+      'Git',
+      'TensorFlow',
+      'AWS',
+      'Kubernetes',
+      'TypeScript',
+      'GraphQL'
     ]
   },
   {
-    name: "Languages",
+    name: 'Design Skills',
     skills: [
-      "English", "Spanish", "French", "German", "Chinese", "Japanese", "Arabic",
-      "Portuguese", "Italian", "Russian", "Korean", "Hindi"
-    ]
-  },
-  {
-    name: "Tools & Software",
-    skills: [
-      "Microsoft Office", "Adobe Creative Suite", "Jira", "Slack", "Figma",
-      "Visual Studio Code", "AutoCAD", "Salesforce", "SAP", "Tableau", "Power BI"
+      'UI/UX Design',
+      'Figma',
+      'Adobe XD',
+      'Sketch',
+      'InVision',
+      'Wireframing',
+      'Prototyping',
+      'Design Thinking',
+      'Color Theory',
+      'Typography',
+      'User Research',
+      'Interaction Design',
+      'Adobe Photoshop',
+      'Adobe Illustrator',
+      'Brand Design'
     ]
   }
 ];

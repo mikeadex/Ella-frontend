@@ -1,695 +1,230 @@
-import { useState, useEffect } from "react";
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import RichTextMenuBar from "../common/RichTextMenuBar";
-import {
-  commonRules,
-  focusField,
-  validateForm,
-} from "../../utils/formValidation";
-import { sharedStyles } from "../../utils/styling";
-import Notification from "../common/Notification";
-import axiosInstance from "../../api/axios"; 
-import { FaPlus, FaMinus, FaMagic } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useTheme } from '../../context/ThemeContext';
+import { sharedStyles } from '../../utils/styling';
+import ExperienceFormModal from './Experience/ExperienceFormModal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaPlus, FaMinus, FaPencilAlt, FaTrashAlt, FaLightbulb } from 'react-icons/fa';
+import { toastStyles } from '../../utils/formValidation';
 
-const EMPLOYMENT_TYPES = [
-  "Full-time",
-  "Part-time",
-  "Contract",
-  "Internship",
-  "Freelance",
-];
-
-const Experience = ({ data, updateData }) => {
+const Experience = ({ data, updateData, errors }) => {
+  const { isDark } = useTheme();
   const [experiences, setExperiences] = useState(data || []);
-  const [expandedId, setExpandedId] = useState(null);
-  const [currentExperience, setCurrentExperience] = useState({
-    company_name: "",
-    job_title: "",
-    job_description: "",
-    employment_type: "Full-time",
-    achievements: "",
-    start_date: "",
-    end_date: "",
-    current: false,
-  });
-  const [editIndex, setEditIndex] = useState(-1);
-  const [errors, setErrors] = useState({});
-  const [notification, setNotification] = useState(null);
-  const [improving, setImproving] = useState(false);
-  const [improvedText, setImprovedText] = useState("");
-  const [improvingField, setImprovingField] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [currentlyImproving, setCurrentlyImproving] = useState({ index: -1, field: null });
-
-  const descriptionEditor = useEditor({
-    extensions: [StarterKit],
-    content: currentExperience.job_description || '',
-    onUpdate: ({ editor }) => {
-      handleInputChange('job_description', editor.getHTML());
-    },
-  });
-
-  const achievementsEditor = useEditor({
-    extensions: [StarterKit],
-    content: currentExperience.achievements || '',
-    onUpdate: ({ editor }) => {
-      handleInputChange('achievements', editor.getHTML());
-    },
-  });
+  const [expandedIndex, setExpandedIndex] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingExperience, setEditingExperience] = useState(null);
 
   useEffect(() => {
-    if (descriptionEditor && currentExperience.job_description !== descriptionEditor.getHTML()) {
-      descriptionEditor.commands.setContent(currentExperience.job_description || '');
+    if (data) {
+      setExperiences(data);
     }
-    if (achievementsEditor && currentExperience.achievements !== achievementsEditor.getHTML()) {
-      achievementsEditor.commands.setContent(currentExperience.achievements || '');
-    }
-  }, [currentExperience, descriptionEditor, achievementsEditor]);
+  }, [data]);
 
-  const handleInputChange = (field, value) => {
-    setCurrentExperience((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
-  const toggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
-  const validationRules = {
-    company_name: { required: true, label: "Company Name" },
-    job_title: { required: true, label: "Job Title" },
-    job_description: { required: true, label: "Job Description" },
-    employment_type: { required: true, label: "Employment Type" },
-    achievements: { required: true, label: "Achievements" },
-    start_date: { required: true, label: "Start Date" },
-    end_date: { required: !currentExperience.current, label: "End Date" },
-  };
-
-  const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
-    const fieldValue = type === "checkbox" ? checked : value;
-
-    setCurrentExperience((prev) => ({
-      ...prev,
-      [id]: fieldValue,
-      ...(id === 'current' && fieldValue ? { end_date: '' } : {}),
-    }));
-
-    // Clear error for the field being edited
-    if (errors[id]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[id];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleAddExperience = (e) => {
-    e.preventDefault();
-
-    // Validate the current experience
-    const { errors: validationErrors, firstErrorField } = validateForm(
-      currentExperience,
-      validationRules
-    );
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setNotification({
-        type: "error",
-        message: validationErrors[firstErrorField][0],
-      });
-      focusField(firstErrorField);
-      return;
-    }
-
-    // Add the new experience
-    const updatedExperiences = [...experiences, currentExperience];
+  const handleAddExperience = (newExperience) => {
+    const updatedExperiences = [...experiences, newExperience];
     setExperiences(updatedExperiences);
-    updateData(updatedExperiences, false); // Pass false to prevent auto-navigation
+    updateData(updatedExperiences, false);
+    setIsModalOpen(false);
+  };
 
-    // Reset the form
-    setCurrentExperience({
-      company_name: "",
-      job_title: "",
-      job_description: "",
-      employment_type: "Full-time",
-      achievements: "",
-      start_date: "",
-      end_date: "",
-      current: false,
-    });
-    setErrors({});
-    setNotification({
-      type: "success",
-      message: "Experience added successfully!",
-    });
+  const handleUpdateExperience = (index, updatedExperience) => {
+    const updatedExperiences = experiences.map((exp, i) =>
+      i === index ? updatedExperience : exp
+    );
+    setExperiences(updatedExperiences);
+    updateData(updatedExperiences, false);
   };
 
   const handleDeleteExperience = (index) => {
     const updatedExperiences = experiences.filter((_, i) => i !== index);
     setExperiences(updatedExperiences);
-    updateData(updatedExperiences, false); // Pass false to prevent auto-navigation
-    setNotification({
-      type: "success",
-      message: "Experience deleted successfully!",
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (experiences.length === 0) {
-      setNotification({
-        type: "error",
-        message: "Please add at least one work experience",
-      });
-      return;
-    }
-
-    updateData(experiences, true); // Pass true to allow navigation on final submit
-    setNotification({
-      type: "success",
-      message: "Work experience saved successfully!",
-    });
-  };
-
-  const handleImprove = async (field, content) => {
-    if (!content?.trim()) {
-      setNotification({
-        type: "error",
-        message: "Please enter some text to improve"
-      });
-      return;
-    }
-
-    setImprovingField(field);
-    setImproving(true);
-    setProgress(0);
-    setNotification({
-      type: "info",
-      message: `Improving ${field === 'job_description' ? 'job description' : 'achievements'}...`
-    });
-
-    // Start progress simulation
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + (90 - prev) * 0.1;
-      });
-    }, 1000);
-
-    try {
-      const response = await axiosInstance.post(
-        '/api/cv_writer/cv/improve_summary/',
-        { 
-          summary: content,
-          type: field === 'job_description' ? 'job_description' : 'achievement'
-        },
-        { timeout: 120000 }
-      );
-
-      if (response.data && response.data.improved) {
-        setProgress(100);
-        setImprovedText(response.data.improved);
-        setNotification({
-          type: "success",
-          message: "Review and accept the improved version if you like it."
-        });
-      }
-    } catch (err) {
-      console.error('API Error:', err);
-      let errorMessage = "Failed to improve text. Please try again.";
-      
-      if (err.response?.status === 401) {
-        errorMessage = "Your session has expired. Please log in again.";
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-        return;
-      }
-      
-      setNotification({
-        type: "error",
-        message: errorMessage
-      });
-    } finally {
-      clearInterval(progressInterval);
-      setImproving(false);
+    updateData(updatedExperiences, false);
+    if (expandedIndex === index) {
+      setExpandedIndex(null);
+    } else if (expandedIndex > index) {
+      setExpandedIndex(expandedIndex - 1);
     }
   };
 
-  const handleAcceptImprovement = () => {
-    const updatedExperience = { ...currentExperience };
-    updatedExperience[improvingField] = improvedText;
-    setCurrentExperience(updatedExperience);
-    setImprovedText("");
-    setImprovingField("");
-    setNotification({
-      type: "success",
-      message: "Improvement accepted!"
-    });
+  const handleToggleExpand = (index) => {
+    setExpandedIndex(expandedIndex === index ? null : index);
   };
 
-  const handleDiscardImprovement = () => {
-    setImprovedText("");
-    setImprovingField("");
-    setNotification(null);
+  const handleEditExperience = (experience, index) => {
+    setEditingExperience({ ...experience, index });
+    setIsModalOpen(true);
   };
+
+  const handleSaveEdit = (updatedExperience) => {
+    const newExperiences = [...experiences];
+    newExperiences[editingExperience.index] = updatedExperience;
+    setExperiences(newExperiences);
+    updateData(newExperiences, false);
+    setIsModalOpen(false);
+    setEditingExperience(null);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingExperience(null);
+  };
+
+  const renderEmptyState = () => (
+    <div className="text-center py-8 px-4">
+      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-4
+        ${isDark ? 'bg-yellow-400/10' : 'bg-blue-50'}`}>
+        <FaLightbulb className={`w-6 h-6 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`} />
+      </div>
+      <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-yellow-400' : 'text-gray-900'}`}>
+        Add Your Work Experience
+      </h3>
+      <div className={`space-y-4 max-w-lg mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p className="text-sm">
+          Work experience is a crucial part of your CV. Don't have traditional work experience? Consider including:
+        </p>
+        <ul className="text-sm text-left list-disc pl-6 space-y-2">
+          <li>Volunteer work or community service</li>
+          <li>Freelance projects or gig work</li>
+          <li>Personal projects or open-source contributions</li>
+          <li>Internships or apprenticeships</li>
+          <li>Academic or research projects</li>
+          <li>Leadership roles in clubs or organizations</li>
+        </ul>
+        <div 
+          className="mt-4 p-3 rounded-lg text-left text-sm"
+          style={toastStyles.warning.style}
+          role="alert"
+        >
+          <span className="mr-2" role="img" aria-label="warning">
+            {toastStyles.warning.icon}
+          </span>
+          At least one work experience entry is required to proceed
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 py-6">
-      {notification && (
-        <Notification {...notification} onClose={() => setNotification(null)} />
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
-        <div className={sharedStyles.card}>
-          <div className={sharedStyles.cardHeader}>
-            <h3 className="text-lg font-semibold">Work Experience</h3>
-          </div>
-
-          <div className={sharedStyles.cardBody}>
-            {/* List of added experiences */}
-            {experiences.length > 0 && (
-              <div className="mb-6">
-                <h4 className="text-lg font-medium mb-4">Added Experiences</h4>
-                <div className="space-y-4">
-                  {experiences.map((exp, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
-                    >
+    <div className={`${sharedStyles.card} ${isDark ? 'dark:bg-gray-900 dark:border-yellow-500/30 dark:shadow-yellow-500/20' : ''}`}>
+      <div className={`${sharedStyles.cardHeader} ${isDark ? 'dark:bg-gradient-to-r dark:from-yellow-900/40 dark:to-orange-900/40 dark:border-b dark:border-yellow-500/30' : ''}`}>
+        <h2 className={`text-xl font-semibold ${isDark ? 'dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-yellow-400 dark:to-orange-400' : ''}`}>
+          Work Experience <span className="text-red-500">*</span>
+        </h2>
+      </div>
+      
+      <div className={`${sharedStyles.cardBody} ${isDark ? 'dark:bg-black' : ''}`}>
+        {experiences.length === 0 ? renderEmptyState() : (
+          <AnimatePresence>
+            {experiences.map((experience, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-4"
+              >
+                <div
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                        {experience.job_title} at {experience.company_name}
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {experience.employment_type} • {experience.start_date} - {experience.current ? 'Present' : experience.end_date}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEditExperience(experience, index)}
+                        className={`p-1.5 rounded-full transition-colors duration-200
+                          ${isDark 
+                            ? 'text-yellow-400 hover:bg-yellow-400/10' 
+                            : 'text-gray-600 hover:bg-gray-100'}`}
+                        aria-label="Edit experience"
+                      >
+                        <FaPencilAlt className="w-4 h-4" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteExperience(index)}
-                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                        className={`p-1.5 rounded-full transition-colors duration-200
+                          ${isDark 
+                            ? 'text-red-400 hover:bg-red-400/10' 
+                            : 'text-red-600 hover:bg-red-50'}`}
+                        aria-label="Delete experience"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
+                        <FaTrashAlt className="w-4 h-4" />
                       </button>
-                      <div
-                        className="cursor-pointer"
-                        onClick={() =>
-                          toggleExpand(index)
-                        }
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h5 className="font-medium">{exp.job_title}</h5>
-                            <p className="text-sm text-gray-600">
-                              {exp.company_name}
-                            </p>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {exp.start_date} -{" "}
-                            {exp.current ? "Present" : exp.end_date}
-                          </div>
-                        </div>
-                        {expandedId === index && (
-                          <div className="mt-4 space-y-2">
-                            <p className="text-sm">
-                              <span className="font-medium">Type:</span>{" "}
-                              {exp.employment_type}
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Description:</span>{" "}
-                              <div 
-                                className="prose max-w-none text-gray-700" 
-                                dangerouslySetInnerHTML={{ __html: exp.job_description }}
-                              />
-                            </p>
-                            <p className="text-sm">
-                              <span className="font-medium">Achievements:</span>{" "}
-                              <div 
-                                className="prose max-w-none text-gray-700" 
-                                dangerouslySetInnerHTML={{ __html: exp.achievements }}
-                              />
-                            </p>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <label className="block text-sm font-medium">Job Description</label>
-                                <button
-                                  onClick={() => handleImprove('job_description', exp.job_description)}
-                                  disabled={improving || !exp.job_description.trim()}
-                                  className={`flex items-center space-x-1 px-2 py-1 rounded text-sm ${
-                                    improving || !exp.job_description.trim()
-                                      ? 'bg-gray-300 cursor-not-allowed'
-                                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                                  }`}
-                                >
-                                  <FaMagic className="w-4 h-4" />
-                                  <span>Improve</span>
-                                </button>
-                              </div>
-                              <div 
-                                className="prose max-w-none text-gray-700" 
-                                dangerouslySetInnerHTML={{ __html: exp.job_description }}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <label className="block text-sm font-medium">Key Achievements</label>
-                                <button
-                                  onClick={() => handleImprove('achievements', exp.achievements)}
-                                  disabled={improving || !exp.achievements.trim()}
-                                  className={`flex items-center space-x-1 px-2 py-1 rounded text-sm ${
-                                    improving || !exp.achievements.trim()
-                                      ? 'bg-gray-300 cursor-not-allowed'
-                                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                                  }`}
-                                >
-                                  <FaMagic className="w-4 h-4" />
-                                  <span>Improve</span>
-                                </button>
-                              </div>
-                              <div 
-                                className="prose max-w-none text-gray-700" 
-                                dangerouslySetInnerHTML={{ __html: exp.achievements }}
-                              />
-                            </div>
-                            {improving && currentlyImproving.index === index && (
-                              <div className="mt-4">
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                                  <div
-                                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                                    style={{ width: `${progress}%` }}
-                                  />
-                                </div>
-                                <div className="text-sm text-gray-600 mt-1 text-center">
-                                  {progress < 100 ? 'Improving...' : 'Complete!'}
-                                </div>
-                              </div>
-                            )}
-                            {improvedText && currentlyImproving.index === index && (
-                              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
-                                <h4 className="font-medium text-green-800 mb-2">Improved Version:</h4>
-                                <p className="text-gray-800 whitespace-pre-wrap">{improvedText}</p>
-                                <div className="mt-4 flex space-x-4">
-                                  <button
-                                    onClick={handleAcceptImprovement}
-                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                                  >
-                                    Accept
-                                  </button>
-                                  <button
-                                    onClick={handleDiscardImprovement}
-                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                                  >
-                                    Discard
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add new experience form */}
-            <div className="border-t pt-6">
-              <h4 className="text-lg font-medium mb-4">Add New Experience</h4>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="company_name"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Company Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="company_name"
-                    value={currentExperience.company_name}
-                    onChange={handleChange}
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.company_name ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.company_name && (
-                    <p className={sharedStyles.error}>
-                      {errors.company_name[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="job_title"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Job Title *
-                  </label>
-                  <input
-                    type="text"
-                    id="job_title"
-                    value={currentExperience.job_title}
-                    onChange={handleChange}
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.job_title ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.job_title && (
-                    <p className={sharedStyles.error}>
-                      {errors.job_title[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="employment_type"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Employment Type *
-                  </label>
-                  <select
-                    id="employment_type"
-                    value={currentExperience.employment_type}
-                    onChange={handleChange}
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.employment_type ? sharedStyles.errorBorder : ""
-                    }`}
-                  >
-                    {EMPLOYMENT_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.employment_type && (
-                    <p className={sharedStyles.error}>
-                      {errors.employment_type[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="start_date"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Start Date *
-                  </label>
-                  <input
-                    type="date"
-                    id="start_date"
-                    value={currentExperience.start_date}
-                    onChange={handleChange}
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.start_date ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.start_date && (
-                    <p className={sharedStyles.error}>
-                      {errors.start_date[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className="sm:col-span-2">
-                  <div className="flex items-center mb-4">
-                    <input
-                      type="checkbox"
-                      id="current"
-                      checked={currentExperience.current}
-                      onChange={handleChange}
-                      className="h-4 w-4 text-sky-950 focus:ring-sky-500 border-gray-300 rounded"
-                    />
-                    <label
-                      htmlFor="current"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      I currently work here
-                    </label>
                   </div>
-
-                  {!currentExperience.current && (
-                    <div>
-                      <label
-                        htmlFor="end_date"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        End Date *
-                      </label>
-                      <input
-                        type="date"
-                        id="end_date"
-                        value={currentExperience.end_date}
-                        onChange={handleChange}
-                        min={currentExperience.start_date}
-                        className={`${sharedStyles.inputStyle} ${
-                          errors.end_date ? sharedStyles.errorBorder : ""
-                        }`}
-                      />
-                      {errors.end_date && (
-                        <p className={sharedStyles.error}>
-                          {errors.end_date[0]}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="sm:col-span-2">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Job Description
-                    </label>
-                    <div className="prose max-w-none">
-                      <RichTextMenuBar editor={descriptionEditor} />
-                      <EditorContent
-                        editor={descriptionEditor}
-                        className={`${sharedStyles.textareaStyle} min-h-[150px] focus:outline-none ${
-                          errors.job_description ? "border-red-500" : ""
-                        }`}
-                      />
-                    </div>
-                    {errors.job_description && (
-                      <p className="mt-1 text-sm text-red-500">{errors.job_description}</p>
-                    )}
-                    {!improvedText && improvingField !== 'job_description' && (
-                      <button
-                        onClick={() => handleImprove('job_description', descriptionEditor.getText())}
-                        className={`${sharedStyles.buttonGhost} mt-2`}
-                        disabled={improving}
-                      >
-                        Improve with AI
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Key Achievements
-                    </label>
-                    <div className="prose max-w-none">
-                      <RichTextMenuBar editor={achievementsEditor} />
-                      <EditorContent
-                        editor={achievementsEditor}
-                        className={`${sharedStyles.textareaStyle} min-h-[150px] focus:outline-none ${
-                          errors.achievements ? "border-red-500" : ""
-                        }`}
-                      />
-                    </div>
-                    {errors.achievements && (
-                      <p className="mt-1 text-sm text-red-500">{errors.achievements}</p>
-                    )}
-                    {!improvedText && improvingField !== 'achievements' && (
-                      <button
-                        onClick={() => handleImprove('achievements', achievementsEditor.getText())}
-                        className={`${sharedStyles.buttonGhost} mt-2`}
-                        disabled={improving}
-                      >
-                        Improve with AI
-                      </button>
-                    )}
-                  </div>
-
-                  {improving && currentlyImproving.index === -1 && (
-                    <div className="mt-4">
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                        <div
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                          style={{ width: `${progress}%` }}
-                        />
+                  <button
+                    type="button"
+                    onClick={() => handleToggleExpand(index)}
+                    className="mt-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    {expandedIndex === index ? 'Show Less' : 'Show More'}
+                  </button>
+                  {expandedIndex === index && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <h5 className="font-medium text-gray-900 dark:text-gray-100">Job Description</h5>
+                        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: experience.job_description }} />
                       </div>
-                      <div className="text-sm text-gray-600 mt-1 text-center">
-                        {progress < 100 ? 'Improving...' : 'Complete!'}
-                      </div>
-                    </div>
-                  )}
-
-                  {improvedText && currentlyImproving.index === -1 && (
-                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
-                      <h4 className="font-medium text-green-800 mb-2">Improved Version:</h4>
-                      <p className="text-gray-800 whitespace-pre-wrap">{improvedText}</p>
-                      <div className="mt-4 flex space-x-4">
-                        <button
-                          onClick={handleAcceptImprovement}
-                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={handleDiscardImprovement}
-                          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                          Discard
-                        </button>
+                      <div>
+                        <h5 className="font-medium text-gray-900 dark:text-gray-100">Key Achievements</h5>
+                        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: experience.achievements }} />
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
 
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={handleAddExperience}
-                  className={sharedStyles.buttonSuccess}
-                >
-                  Add Experience
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className={`mt-4 flex items-center justify-center w-full p-3 rounded-md border-2 border-dashed
+            ${isDark 
+              ? 'dark:border-yellow-500/30 dark:text-yellow-400 hover:dark:border-yellow-400 hover:dark:text-yellow-300' 
+              : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-700'
+            } transition-colors duration-200`}
+        >
+          <FaPlus className="mr-2" />
+          Add Work Experience
+        </button>
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="submit"
-            className={sharedStyles.buttonPrimary}
+        {errors?.experience && (
+          <div 
+            className="mt-4 p-3 rounded-lg text-sm flex items-center"
+            style={toastStyles.error.style}
+            role="alert"
           >
-            Save & Continue
-          </button>
-        </div>
-      </form>
+            <span className="mr-2" role="img" aria-label="error">
+              {toastStyles.error.icon}
+            </span>
+            {errors.experience}
+          </div>
+        )}
+
+        <ExperienceFormModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSave={editingExperience ? handleSaveEdit : handleAddExperience}
+          initialData={editingExperience || undefined}
+        />
+      </div>
     </div>
   );
+};
+
+Experience.propTypes = {
+  data: PropTypes.array,
+  updateData: PropTypes.func.isRequired,
+  errors: PropTypes.object
 };
 
 export default Experience;

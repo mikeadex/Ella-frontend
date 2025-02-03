@@ -1,50 +1,26 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+import axiosInstance from '../api/axios';
 
 class CVImprovementService {
-    constructor() {
-        this.client = axios.create({
-            baseURL: `${API_BASE_URL}/cv`,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+    constructor(client = axiosInstance) {
+        this.client = client;
     }
 
-    // Analyze CV content
-    async analyzeCv(cvData) {
+    // Improve summary specifically
+    async improveSummary(summary) {
         try {
-            const response = await this.client.post('/analyze', cvData);
-            return response.data;
-        } catch (error) {
-            console.error('Error analyzing CV:', error);
-            throw error;
-        }
-    }
-
-    // Improve specific section
-    async improveSection(section, content, level = 'minimal') {
-        try {
-            const response = await this.client.post('/improve/section', {
-                section,
-                content,
-                level
+            console.log('CVImprovementService: Sending summary to improve:', summary);
+            const response = await this.client.post('/api/cv_writer/cv/improve_summary/', {
+                summary
             });
-            return response.data;
+            console.log('CVImprovementService: Raw API response:', response);
+            console.log('CVImprovementService: Response data:', response.data);
+            
+            // Return the improved summary directly from the response
+            return {
+                improved: response.data.improved
+            };
         } catch (error) {
-            console.error('Error improving section:', error);
-            throw error;
-        }
-    }
-
-    // Complete CV review
-    async reviewCv(cvData) {
-        try {
-            const response = await this.client.post('/review', cvData);
-            return response.data;
-        } catch (error) {
-            console.error('Error reviewing CV:', error);
+            console.error('CVImprovementService: Error improving summary:', error);
             throw error;
         }
     }

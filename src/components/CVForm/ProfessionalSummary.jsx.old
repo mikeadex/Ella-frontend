@@ -1,0 +1,204 @@
+import React, { useState } from 'react';
+import { FaLightbulb, FaMagic } from 'react-icons/fa';
+import { useTheme } from '../../context/ThemeContext';
+import useFocusManagement from '../../hooks/useFocusManagement';
+import axiosInstance from '../../api/axios';
+
+const ProfessionalSummary = ({ data, updateData, errors }) => {
+  const [notification, setNotification] = useState(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showTips, setShowTips] = useState(false);
+  const [improving, setImproving] = useState(false);
+  const [improvedSummary, setImprovedSummary] = useState("");
+  const [progress, setProgress] = useState(0);
+  const { theme } = useTheme();
+  const textareaRef = useFocusManagement(true);
+
+  // Convert data to string if it's an object
+  const summaryText = typeof data === 'string' ? data : '';
+
+  const handleSummaryChange = (e) => {
+    updateData(e.target.value);
+  };
+
+  const handleImprove = async () => {
+    if (!summaryText) {
+      setNotification({
+        type: 'error',
+        message: 'Please write a summary first before improving.'
+      });
+      return;
+    }
+
+    setImproving(true);
+    setProgress(0);
+
+    try {
+      const response = await axiosInstance.post('/api/cv_writer/cv/improve_summary/', {
+        summary: summaryText
+      });
+
+      if (response.data.improved_summary) {
+        setImprovedSummary(response.data.improved_summary);
+        setProgress(100);
+      }
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Failed to improve summary. Please try again.'
+      });
+    } finally {
+      setImproving(false);
+    }
+  };
+
+  const handleUseImproved = () => {
+    updateData(improvedSummary);
+    setImprovedSummary("");
+    setProgress(0);
+  };
+
+  const characterCount = summaryText ? summaryText.length : 0;
+  const isOverLimit = characterCount > 2000;
+
+  return (
+    <div 
+      className="space-y-4"
+      role="region"
+      aria-label="Professional Summary Section"
+    >
+      {notification && (
+        <div 
+          className={`p-4 rounded-lg ${
+            notification.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+          }`}
+          role="alert"
+          aria-live="polite"
+        >
+          {notification.message}
+          <button 
+            onClick={() => setNotification(null)}
+            className="ml-2 text-sm font-medium hover:text-opacity-75"
+            aria-label="Dismiss notification"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {errors?.summary && (
+        <div 
+          className="p-4 rounded-lg bg-red-100 text-red-700"
+          role="alert"
+          aria-live="assertive"
+        >
+          {errors.summary}
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+        <div className="p-6">
+          <div className="mb-4">
+            <label 
+              htmlFor="summary" 
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Professional Summary
+            </label>
+            <textarea
+              ref={textareaRef}
+              id="summary"
+              name="summary"
+              rows={6}
+              value={summaryText}
+              onChange={handleSummaryChange}
+              className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                isOverLimit ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Write a compelling professional summary..."
+              aria-describedby="summary-description"
+            />
+            <div className="mt-2 flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+              <span>
+                {characterCount}/2000 characters
+                {isOverLimit && (
+                  <span className="text-red-500 ml-2">
+                    Character limit exceeded
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              onClick={handleImprove}
+              disabled={improving || !summaryText}
+              className={`flex items-center px-4 py-2 rounded-lg text-white ${
+                improving || !summaryText
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+            >
+              <FaMagic className="mr-2" />
+              {improving ? 'Improving...' : 'Improve Summary'}
+            </button>
+
+            <button
+              onClick={() => setShowTips(!showTips)}
+              className="flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              <FaLightbulb className="mr-2" />
+              Writing Tips
+            </button>
+          </div>
+
+          {improving && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {improvedSummary && (
+            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                Improved Version
+              </h4>
+              <p className="text-sm text-green-700 dark:text-green-300 mb-4">
+                {improvedSummary}
+              </p>
+              <button
+                onClick={handleUseImproved}
+                className="text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+              >
+                Use This Version
+              </button>
+            </div>
+          )}
+
+          {showTips && (
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                Writing Tips
+              </h4>
+              <ul className="list-disc list-inside text-sm text-yellow-700 dark:text-yellow-300 space-y-2">
+                <li>Keep it concise and focused on your key achievements</li>
+                <li>Use action verbs and quantify results when possible</li>
+                <li>Tailor it to the job you're applying for</li>
+                <li>Highlight your unique value proposition</li>
+                <li>Avoid clichés and generic statements</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfessionalSummary;

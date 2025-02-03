@@ -1,361 +1,210 @@
-import { useState } from "react";
-import { REFERENCE_TYPES } from "../../utils/constants";
-import { sharedStyles } from "../../utils/styling";
-import Notification from "../common/Notification";
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { FaPlus, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../context/ThemeContext';
+import { sharedStyles } from '../../utils/styling';
+import ReferenceFormModal from './Reference/ReferenceFormModal';
 
 const Reference = ({ data, updateData }) => {
+  const { isDark } = useTheme();
   const [references, setReferences] = useState(data || []);
-  const [currentReference, setCurrentReference] = useState({
-    name: "",
-    title: "",
-    company: "",
-    email: "",
-    phone: "",
-    type: "Professional",
-  });
-  const [errors, setErrors] = useState({});
-  const [notification, setNotification] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReference, setEditingReference] = useState(null);
 
-  const validateReference = () => {
-    const newErrors = {};
-    if (!currentReference.name.trim()) newErrors.name = "Name is required";
-    if (!currentReference.title.trim()) newErrors.title = "Title is required";
-    if (!currentReference.company.trim())
-      newErrors.company = "Company is required";
-    if (!currentReference.type) newErrors.type = "Reference type is required";
-    if (!currentReference.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(currentReference.email)
-    ) {
-      newErrors.email = "Invalid email address";
+  useEffect(() => {
+    if (data) {
+      setReferences(data);
     }
-    if (
-      currentReference.phone &&
-      !/^\+?[\d\s-]{10,}$/.test(currentReference.phone)
-    ) {
-      newErrors.phone = "Invalid phone number";
-    }
-    return newErrors;
-  };
+  }, [data]);
 
-  const handleAddReference = (e) => {
-    e.preventDefault();
-    const validationErrors = validateReference();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setNotification({
-        type: "error",
-        message: "Please fix the errors before adding the reference",
-      });
-      return;
-    }
-
-    const newReference = {
-      id: Date.now(),
-      name: currentReference.name.trim(),
-      title: currentReference.title.trim(),
-      company: currentReference.company.trim(),
-      email: currentReference.email.trim(),
-      phone: currentReference.phone.trim(),
-      reference_type: currentReference.type,
-    };
-
+  const handleAddReference = (newReference) => {
     const updatedReferences = [...references, newReference];
     setReferences(updatedReferences);
-    updateData(updatedReferences, false); // Pass false to prevent auto-navigation
-
-    setCurrentReference({
-      name: "",
-      title: "",
-      company: "",
-      email: "",
-      phone: "",
-      type: "Professional",
-    });
-
-    setErrors({});
-    setNotification({
-      type: "success",
-      message: "Reference added successfully!",
-    });
+    updateData(updatedReferences);
+    setIsModalOpen(false);
   };
 
-  const handleRemoveReference = (id) => {
-    const updatedReferences = references.filter((ref) => ref.id !== id);
-    setReferences(updatedReferences);
-    updateData(updatedReferences, false); // Pass false to prevent auto-navigation
-    setNotification({
-      type: "success",
-      message: "Reference removed successfully!",
-    });
+  const handleEditReference = (reference) => {
+    setEditingReference(reference);
+    setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (references.length === 0) {
-      setNotification({
-        type: "error",
-        message: "Please add at least one reference",
-      });
-      return;
-    }
-
-    // Ensure all references have required fields
-    const hasAllRequiredFields = references.every(
-      (ref) => ref.name && ref.title && ref.company && ref.reference_type && ref.email
+  const handleSaveEdit = (updatedReference) => {
+    const updatedReferences = references.map(ref => 
+      ref.id === updatedReference.id ? updatedReference : ref
     );
+    setReferences(updatedReferences);
+    updateData(updatedReferences);
+    setIsModalOpen(false);
+    setEditingReference(null);
+  };
 
-    if (!hasAllRequiredFields) {
-      setNotification({
-        type: "error",
-        message:
-          "All references must have name, title, company, reference type, and email",
-      });
-      return;
-    }
+  const handleDeleteReference = (id) => {
+    const updatedReferences = references.filter(ref => ref.id !== id);
+    setReferences(updatedReferences);
+    updateData(updatedReferences);
+  };
 
-    // Format references for submission
-    const formattedReferences = references.map((ref) => ({
-      name: ref.name,
-      title: ref.title,
-      company: ref.company,
-      email: ref.email,
-      phone: ref.phone || "",
-      reference_type: ref.reference_type,
-    }));
-
-    updateData(formattedReferences, true); // Pass true to allow navigation on final submit
-    setNotification({
-      type: "success",
-      message: "References saved successfully!",
-    });
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingReference(null);
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 py-6">
-      {notification && (
-        <Notification {...notification} onClose={() => setNotification(null)} />
-      )}
+    <div className={`${sharedStyles.card} ${isDark ? 'dark:bg-gray-900 dark:border-yellow-500/30 dark:shadow-yellow-500/20' : ''}`}>
+      <div className={`${sharedStyles.cardHeader} ${isDark ? 'dark:bg-gradient-to-r dark:from-yellow-900/40 dark:to-orange-900/40 dark:border-b dark:border-yellow-500/30' : ''}`}>
+        <h2 className={`text-xl font-semibold ${isDark ? 'dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-yellow-400 dark:to-orange-400' : ''}`}>
+          References
+        </h2>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
-        <div className={sharedStyles.card}>
-          <div className={sharedStyles.cardHeader}>
-            <h3 className="text-lg font-semibold">References</h3>
+      <div className={`${sharedStyles.cardBody} ${isDark ? 'dark:bg-black' : ''}`}>
+        {references.length === 0 ? (
+          <div className={`mb-6 p-6 rounded-lg text-center border-2 border-dashed
+            ${isDark 
+              ? 'dark:border-yellow-500/20 dark:bg-gray-800/50' 
+              : 'border-gray-200 bg-gray-50'}`}
+          >
+            <div className={`inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full
+              ${isDark ? 'bg-yellow-500/10' : 'bg-blue-50'}`}
+            >
+              <svg
+                className={`w-6 h-6 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <h3 className={`text-lg font-medium mb-2 
+              ${isDark ? 'dark:text-yellow-400' : 'text-gray-900'}`}
+            >
+              Add Your References
+            </h3>
+            <p className={`text-sm mb-4 
+              ${isDark ? 'dark:text-gray-400' : 'text-gray-600'}`}
+            >
+              References can strengthen your application by:
+            </p>
+            <ul className={`text-sm space-y-2 mb-4 text-left mx-auto max-w-md
+              ${isDark ? 'dark:text-gray-400' : 'text-gray-600'}`}
+            >
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Validating your work experience and skills</span>
+              </li>
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Providing insights into your work ethic</span>
+              </li>
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Adding credibility to your achievements</span>
+              </li>
+            </ul>
           </div>
-
-          <div className={sharedStyles.cardBody}>
-            {references.length > 0 ? (
-              <div className="space-y-4">
-                {references.map((ref) => (
-                  <div
-                    key={ref.id}
-                    className="bg-white shadow rounded-lg p-4 border border-gray-200"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="text-lg font-medium">{ref.name}</h4>
-                        <p className="text-gray-600">{ref.title}</p>
-                        <p className="text-gray-600">{ref.company}</p>
-                        <p className="text-sm text-gray-500">{ref.email}</p>
-                        {ref.phone && (
-                          <p className="text-sm text-gray-500">{ref.phone}</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <AnimatePresence>
+              {references.map((reference) => (
+                <motion.div
+                  key={reference.id}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className={`relative p-4 rounded-lg border
+                    ${isDark 
+                      ? 'bg-gray-800 border-yellow-500/30 hover:border-yellow-400/50' 
+                      : 'bg-white border-gray-200 hover:border-gray-300'} 
+                    transition-colors duration-200`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-grow">
+                      <h3 className={`font-medium ${isDark ? 'text-yellow-400' : 'text-gray-900'}`}>
+                        {reference.name}
+                      </h3>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {reference.title}
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {reference.company}
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                          {reference.email}
+                        </p>
+                        {reference.phone && (
+                          <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                            {reference.phone}
+                          </p>
                         )}
-                        <p className="text-sm text-gray-500">
-                          Type: {ref.reference_type}
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                          {reference.reference_type}
                         </p>
                       </div>
+                    </div>
+                    <div className="flex gap-2">
                       <button
-                        type="button"
-                        onClick={() => handleRemoveReference(ref.id)}
-                        className="text-red-600 hover:text-red-800"
+                        onClick={() => handleEditReference(reference)}
+                        className={`p-1.5 rounded-full transition-colors duration-200
+                          ${isDark 
+                            ? 'text-yellow-400 hover:bg-yellow-400/10' 
+                            : 'text-gray-600 hover:bg-gray-100'}`}
+                        aria-label="Edit reference"
                       >
-                        Remove
+                        <FaPencilAlt className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReference(reference.id)}
+                        className={`p-1.5 rounded-full transition-colors duration-200
+                          ${isDark 
+                            ? 'text-red-400 hover:bg-red-400/10' 
+                            : 'text-red-600 hover:bg-red-50'}`}
+                        aria-label="Delete reference"
+                      >
+                        <FaTrashAlt className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>No references added yet</p>
-              </div>
-            )}
-
-            {/* Add new reference form */}
-            <div className="border-t pt-6 mt-6">
-              <h4 className="text-lg font-medium mb-4">Add New Reference</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={currentReference.name}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.name ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.name && (
-                    <p className={sharedStyles.error}>{errors.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                    Title *
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    value={currentReference.title}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.title ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.title && (
-                    <p className={sharedStyles.error}>{errors.title}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700">
-                    Company *
-                  </label>
-                  <input
-                    type="text"
-                    id="company"
-                    value={currentReference.company}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        company: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.company ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.company && (
-                    <p className={sharedStyles.error}>{errors.company}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                    Reference Type *
-                  </label>
-                  <select
-                    id="type"
-                    value={currentReference.type}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        type: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.type ? sharedStyles.errorBorder : ""
-                    }`}
-                  >
-                    {REFERENCE_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.type && (
-                    <p className={sharedStyles.error}>{errors.type}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={currentReference.email}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.email ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.email && (
-                    <p className={sharedStyles.error}>{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={currentReference.phone}
-                    onChange={(e) =>
-                      setCurrentReference((prev) => ({
-                        ...prev,
-                        phone: e.target.value,
-                      }))
-                    }
-                    className={`${sharedStyles.inputStyle} ${
-                      errors.phone ? sharedStyles.errorBorder : ""
-                    }`}
-                  />
-                  {errors.phone && (
-                    <p className={sharedStyles.error}>{errors.phone}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={handleAddReference}
-                  className={sharedStyles.buttonSuccess}
-                >
-                  Add Reference
-                </button>
-              </div>
-            </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-        </div>
+        )}
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="submit"
-            className={sharedStyles.buttonPrimary}
-          >
-            Save & Continue
-          </button>
-        </div>
-      </form>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className={`flex items-center justify-center w-full p-3 rounded-md border-2 border-dashed
+            ${isDark 
+              ? 'dark:border-yellow-500/30 dark:text-yellow-400 hover:dark:border-yellow-400 hover:dark:text-yellow-300' 
+              : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-700'
+            } transition-colors duration-200`}
+        >
+          <FaPlus className="mr-2" />
+          Add Reference
+        </button>
+
+        <ReferenceFormModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSave={editingReference ? handleSaveEdit : handleAddReference}
+          initialData={editingReference}
+        />
+      </div>
     </div>
   );
+};
+
+Reference.propTypes = {
+  data: PropTypes.array,
+  updateData: PropTypes.func.isRequired
 };
 
 export default Reference;

@@ -2,6 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { CVFormProvider } from './context/CVFormContext';
+import { HelmetProvider } from 'react-helmet-async';
+import RootErrorBoundary from './components/ErrorBoundary/RootErrorBoundary';
 import Navbar from './components/Navbar';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import Login from './pages/Login';
@@ -199,13 +202,19 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <ThemeProvider>
-          <AppRoutes />
-        </ThemeProvider>
-      </AuthProvider>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <AuthProvider>
+          <ThemeProvider>
+            <CVFormProvider>
+              <RootErrorBoundary>
+                <AppRoutes />
+              </RootErrorBoundary>
+            </CVFormProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </Router>
+    </HelmetProvider>
   );
 }
 

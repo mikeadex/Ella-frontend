@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, memo, lazy, useEffect } from "react";
 import styled from "styled-components";
-import PersonalInfo from "./PersonalInfo";
-import ProfessionalSummary from "./ProfessionalSummary";
-import Experience from "./Experience";
-import Education from "./Education";
-import Skills from "./Skills";
-import Language from "./Language";
-import Certification from "./Certification";
-import Interests from "./Interests";
-import SocialMedia from "./SocialMedia";
-import Reference from "./Reference";
-import CVPreview from "./CVPreview";
+import { useCVForm } from "../../context/CVFormContext";
+import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import useMemoizedFormData from "../../hooks/useMemoizedFormData";
+import LazyFormSection from "./LazyFormSection";
+import LoadingSection from "./LoadingSection"; // Assuming LoadingSection is defined in this file
+
+// Lazy load all form sections
+const PersonalInfo = lazy(() => import("./PersonalInfo.jsx"));
+const ProfessionalSummary = lazy(() => import("./ProfessionalSummary/ProfessionalSummary.jsx"));
+const Experience = lazy(() => import("./Experience.jsx"));
+const Education = lazy(() => import("./Education.jsx"));
+const Skills = lazy(() => import("./Skills.jsx"));
+const Language = lazy(() => import("./Language.jsx"));
+const Certification = lazy(() => import("./Certification.jsx"));
+const Interests = lazy(() => import("./Interests.jsx"));
+const SocialMedia = lazy(() => import("./SocialMedia.jsx"));
+const Reference = lazy(() => import("./Reference.jsx"));
+const CVPreview = lazy(() => import("./CVPreview.jsx"));
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -20,18 +27,34 @@ const FormContainer = styled.div`
 
 const Navigation = styled.div`
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 0 1rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0;
+  }
 `;
 
 const Button = styled.button`
   background-color: #4F46E5;
   color: white;
-  padding: 10px 20px;
+  padding: 0.75rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 0.375rem;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
+  width: 100%;
+  transition: all 0.2s;
+
+  @media (min-width: 640px) {
+    width: auto;
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+  }
 
   &:hover {
     background-color: #4338CA;
@@ -65,196 +88,363 @@ const StepTitle = styled.h2`
   margin-bottom: 2rem;
 `;
 
-const CVFormContainer = ({ onCVCreated }) => {
+const CVFormContainer = memo(({ onCVCreated }) => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    personalInfo: {},
-    professionalSummary: "",
-    experience: [],
-    education: [],
-    skills: [],
-    language: [],
-    certification: [],
-    interests: [],
-    reference: [],
-    socialMedia: [],
-  });
+  const { 
+    state, 
+    updateSection, 
+    setErrors, 
+    clearErrors,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useCVForm();
+
+  // Ensure state is available before rendering
+  if (!state || !state.personalInfo) {
+    return <LoadingSection />;
+  }
 
   const steps = [
-    { 
-      id: 1, 
-      component: PersonalInfo, 
-      title: "Personal Information",
-      key: "personalInfo",
+    {
+      id: 1,
+      key: 'personalInfo',
+      // title: 'Personal Information',
+      component: PersonalInfo,
+      validate: (data = {}) => {
+        console.log('Validating personalInfo:', data);
+        const errors = {};
+        if (!data.firstName?.trim()) {
+          console.log('firstName is empty');
+          errors.firstName = 'First name is required';
+        }
+        if (!data.lastName?.trim()) {
+          console.log('lastName is empty');
+          errors.lastName = 'Last name is required';
+        }
+        if (!data.email?.trim()) {
+          console.log('email is empty');
+          errors.email = 'Email is required';
+        }
+        
+        const hasErrors = Object.keys(errors).length > 0;
+        console.log('Validation errors:', errors);
+        
+        if (hasErrors) {
+          setErrors('personalInfo', errors);
+          return false;
+        }
+        return true;
+      }
+    },
+    {
+      id: 2,
+      key: 'professionalSummary',
+      // title: 'Professional Summary',
+      component: ProfessionalSummary,
       validate: (data) => {
-        console.log('Validating personal info:', data);
-        if (!data) return false;
+        console.log('Validating professionalSummary:', data);
+        const errors = {};
         
-        const required = ['first_name', 'last_name', 'email'];
-        const isValid = required.every(field => {
-          const hasField = data[field] && data[field].trim() !== '';
-          console.log(`Field ${field}:`, { value: data[field], isValid: hasField });
-          return hasField;
-        });
+        // Handle both string and object cases
+        const summary = typeof data === 'string' ? data : data?.summary || '';
         
-        console.log('Personal Info validation result:', isValid);
-        return isValid;
+        if (!summary.trim()) {
+          console.log('summary is empty');
+          errors.summary = 'Professional summary is required';
+        } else if (summary.length > 2000) {
+          console.log('summary is too long');
+          errors.summary = 'Professional summary must be less than 2000 characters';
+        }
+        
+        const hasErrors = Object.keys(errors).length > 0;
+        console.log('Validation errors:', errors);
+        
+        if (hasErrors) {
+          setErrors('professionalSummary', errors);
+          return false;
+        }
+        return true;
       }
     },
     { 
-      id: 2, 
-      component: ProfessionalSummary, 
-      title: "Professional Summary",
-      key: "professionalSummary",
-      validate: (data) => data && data.trim() !== ''
+      id: 3,
+      key: 'experience',
+      // title: 'Experience',
+      component: Experience,
+      validate: (data = []) => {
+        console.log('Validating experience:', data);
+        const errors = {};
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          errors.experience = 'At least one work experience entry is required';
+          setErrors('experience', errors);
+          return false;
+        }
+
+        return true;
+      }
     },
     { 
-      id: 3, 
-      component: Experience, 
-      title: "Experience",
-      key: "experience",
+      id: 4,
+      key: 'education',
+      // title: 'Education',
+      component: Education,
+      validate: (data = []) => {
+        console.log('Validating education:', data);
+        const errors = {};
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          errors.education = 'At least one education entry is required';
+          setErrors('education', errors);
+          return false;
+        }
+
+        return true;
+      }
+    },
+    { 
+      id: 5,
+      key: 'skills',
+      component: Skills,
+      validate: (data = []) => {
+        console.log('Validating skills:', data);
+        const errors = {};
+        
+        if (!Array.isArray(data)) {
+          errors.skills = 'Skills must be a list';
+          setErrors('skills', errors);
+          return false;
+        }
+
+        if (data.length < 2) {
+          errors.skills = 'Please add at least 2 skills';
+          setErrors('skills', errors);
+          return false;
+        }
+
+        if (data.length > 12) {
+          errors.skills = 'Maximum of 12 skills allowed';
+          setErrors('skills', errors);
+          return false;
+        }
+
+        return true;
+      }
+    },
+    { 
+      id: 6,
+      key: 'language',
+      // title: 'Languages',
+      component: Language,
       validate: () => true
     },
     { 
-      id: 4, 
-      component: Education, 
-      title: "Education",
-      key: "education",
+      id: 7,
+      key: 'certification',
+      // title: 'Certifications',
+      component: Certification,
       validate: () => true
     },
     { 
-      id: 5, 
-      component: Skills, 
-      title: "Skills",
-      key: "skills",
+      id: 8,
+      key: 'interests',
+      // title: 'Interests',
+      component: Interests,
       validate: () => true
     },
     { 
-      id: 6, 
-      component: Language, 
-      title: "Languages",
-      key: "language",
+      id: 9,
+      key: 'reference',
+      // title: 'References',
+      component: Reference,
       validate: () => true
     },
     { 
-      id: 7, 
-      component: Certification, 
-      title: "Certifications",
-      key: "certification",
-      validate: () => true
+      id: 10,
+      key: 'socialMedia',
+      component: SocialMedia,
+      validate: (data = {}) => {
+        console.log('Validating socialMedia:', data);
+        
+        if (typeof data !== 'object' || Array.isArray(data)) {
+          console.log('socialMedia is not an object');
+          const errors = { socialMedia: 'Invalid social media data format' };
+          setErrors('socialMedia', errors);
+          return false;
+        }
+        
+        return true;
+      }
     },
     { 
-      id: 8, 
-      component: Interests, 
-      title: "Interests",
-      key: "interests",
-      validate: () => true
-    },
-    { 
-      id: 9, 
-      component: Reference, 
-      title: "References",
-      key: "reference",
-      validate: () => true
-    },
-    { 
-      id: 10, 
-      component: SocialMedia, 
-      title: "Social Media",
-      key: "socialMedia",
-      validate: () => true
-    },
-    { 
-      id: 11, 
-      component: CVPreview, 
-      title: "Preview",
-      key: "preview",
+      id: 11,
+      key: 'preview',
+      title: 'Preview',
+      component: CVPreview,
       validate: () => true
     }
   ];
 
-  const handleUpdateData = (key, value) => {
-    console.log('Updating data:', { key, value });
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [key]: value
-      };
-      console.log('New form data:', newData);
-      return newData;
-    });
-  };
+  const currentStep = steps.find(s => s.id === step) || steps[0];
+  const currentStepData = state[currentStep.key] || {};
+  const memoizedData = useMemoizedFormData(currentStepData, [currentStep.key]);
 
-  const handleNextStep = () => {
-    console.log('Current step:', step);
-    console.log('Current form data:', formData);
-    
-    const currentStep = steps[step - 1];
-    const currentStepData = formData[currentStep.key];
-    
-    console.log('Validating step:', {
-      stepId: currentStep.id,
-      stepTitle: currentStep.title,
-      data: currentStepData
+  const handleNext = useCallback(() => {
+    console.log('handleNext called', { 
+      currentStep, 
+      currentStepData: state[currentStep.key],
+      state
     });
     
-    const isValid = currentStep.validate(currentStepData);
-    console.log('Validation result:', isValid);
-    
-    if (isValid) {
-      console.log('Moving to next step');
-      setStep(prev => {
-        const nextStep = Math.min(prev + 1, steps.length);
-        console.log('New step:', nextStep);
+    if (currentStep.validate(state[currentStep.key])) {
+      console.log('Validation passed, moving to next step');
+      setStep(prevStep => {
+        const nextStep = Math.min(prevStep + 1, steps.length);
+        console.log('Setting next step:', nextStep);
         return nextStep;
       });
+      clearErrors(currentStep.key);
     } else {
       console.log('Validation failed');
     }
-  };
+  }, [currentStep, state, steps.length, clearErrors]);
 
-  const handlePrevStep = () => {
-    setStep(prev => Math.max(prev - 1, 1));
-  };
+  const handlePrevious = useCallback(() => {
+    setStep(prevStep => Math.max(prevStep - 1, 1));
+    clearErrors(currentStep.key);
+  }, [currentStep.key, clearErrors]);
 
-  const handleFormCompletion = async () => {
-    try {
-      await onCVCreated(formData);
-    } catch (error) {
-      console.error("Error creating CV:", error);
+  const handleSubmit = useCallback(() => {
+    const isValid = steps.every(step => step.validate(state[step.key]));
+    if (isValid) {
+      onCVCreated(state);
     }
-  };
+  }, [state, steps, onCVCreated]);
 
-  const CurrentStepComponent = steps[step - 1].component;
+  useKeyboardShortcuts([
+    {
+      key: 'ArrowRight',
+      ctrl: true,
+      action: handleNext,
+      description: 'Next section'
+    },
+    {
+      key: 'ArrowLeft',
+      ctrl: true,
+      action: handlePrevious,
+      description: 'Previous section'
+    }
+  ]);
+
+  // Prefetch next section when user is on current section for more than 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nextStep = steps.find(s => s.id === step + 1);
+      if (nextStep) {
+        const nextComponent = nextStep.component;
+        // Trigger prefetch by accessing the component
+        nextComponent.preload?.();
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [step, steps]);
 
   return (
-    <FormContainer>
-      <ProgressBar>
-        <Progress step={step} total={steps.length} />
-      </ProgressBar>
-
-      <StepTitle>{steps[step - 1].title}</StepTitle>
-
-      <CurrentStepComponent
-        data={formData[steps[step - 1].key]}
-        updateData={(value) => handleUpdateData(steps[step - 1].key, value)}
-      />
-
-      <Navigation>
-        <Button 
-          onClick={handlePrevStep} 
-          disabled={step === 1}
+    <FormContainer
+      role="main"
+      aria-label="CV Form"
+    >
+      <div role="navigation" aria-label="Form Progress">
+        <StepTitle>{currentStep.title}</StepTitle>
+        
+        <ProgressBar
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax={steps.length}
+          aria-valuenow={step}
+          aria-label={`Step ${step} of ${steps.length}`}
         >
-          Previous
-        </Button>
-        <Button 
-          onClick={step === steps.length ? handleFormCompletion : handleNextStep}
-        >
-          {step === steps.length ? 'Create CV' : 'Next'}
-        </Button>
+          <Progress step={step} total={steps.length} />
+        </ProgressBar>
+      </div>
+
+      {/* <div 
+        className="mb-4 text-sm text-gray-500"
+        role="region"
+        aria-label="Keyboard Shortcuts"
+      >
+        <span className="font-medium">Keyboard shortcuts: </span>
+        <kbd className="px-2 py-1 mx-1 bg-gray-100 border rounded" aria-label="Command S">⌘S</kbd>
+        <span aria-hidden="true">Save,</span>
+        <kbd className="px-2 py-1 mx-1 bg-gray-100 border rounded" aria-label="Command Z">⌘Z</kbd>
+        <span aria-hidden="true">Undo,</span>
+        <kbd className="px-2 py-1 mx-1 bg-gray-100 border rounded" aria-label="Command Shift Z">⌘⇧Z</kbd>
+        <span aria-hidden="true">Redo,</span>
+        <kbd className="px-2 py-1 mx-1 bg-gray-100 border rounded" aria-label="Command Right Arrow">⌘→</kbd>
+        <span aria-hidden="true">Next,</span>
+        <kbd className="px-2 py-1 mx-1 bg-gray-100 border rounded" aria-label="Command Left Arrow">⌘←</kbd>
+        <span aria-hidden="true">Previous</span>
+      </div> */}
+
+      <div role="form">
+        <LazyFormSection
+          component={currentStep.component}
+          sectionKey={currentStep.key}
+          data={memoizedData}
+          updateData={(newData) => updateSection(currentStep.key, newData)}
+          errors={state.errors[currentStep.key] || {}}
+        />
+      </div>
+
+      <Navigation role="navigation" aria-label="Form Navigation">
+        <div className="order-2 sm:order-1">
+          <Button
+            onClick={handlePrevious}
+            disabled={step === 1}
+            aria-label="Previous Section"
+            aria-disabled={step === 1}
+          >
+            Previous
+          </Button>
+        </div>
+        
+        <div className="order-1 sm:order-2">
+          {step < steps.length ? (
+            <Button 
+              onClick={handleNext}
+              aria-label="Next Section"
+              type="button"
+            >
+              Next
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleSubmit}
+              aria-label="Submit Form"
+              type="submit"
+            >
+              Submit
+            </Button>
+          )}
+        </div>
       </Navigation>
+
+      {state.lastSaved && (
+        <div 
+          className="mt-2 text-sm text-gray-500 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          Last saved: {new Date(state.lastSaved).toLocaleTimeString()}
+        </div>
+      )}
     </FormContainer>
   );
-};
+});
+
+CVFormContainer.displayName = 'CVFormContainer';
 
 export default CVFormContainer;

@@ -2,23 +2,80 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axios";
 import CVFormContainer from "../../components/CVForm/CVFormContainer";
+import Navbar from "../../components/Navbar/Navbar";
 import styled from "styled-components";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-top: 5rem;
+  padding: 5rem 1rem 2rem;
+
+  @media (min-width: 640px) {
+    padding: 5rem 1.5rem 2rem;
+  }
 `;
 
 const Header = styled.div`
-  margin-bottom: 2rem;
-  text-align: center;
+  margin: 1rem 0 2rem;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: ${props => props.isDark 
+      ? 'linear-gradient(to right, rgba(250, 204, 21, 0.2), transparent)'
+      : 'linear-gradient(to right, rgba(59, 130, 246, 0.1), transparent)'
+    };
+  }
 `;
 
-const Title = styled.h1`
-  color: var(--text-color);
+const TitleWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const Title = styled.h2`
   margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: ${props => props.isDark ? '#fbbf24' : 'var(--text-color)'};
+  
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 1.25rem;
+    background: ${props => props.isDark
+      ? 'linear-gradient(to bottom, #fbbf24, #f59e0b)'
+      : 'linear-gradient(to bottom, #3b82f6, #1d4ed8)'
+    };
+    border-radius: 2px;
+  }
+`;
+
+const SubTitle = styled.p`
+  margin: 0;
+  font-size: 0.875rem;
+  color: ${props => props.isDark ? 'rgba(250, 204, 21, 0.6)' : 'var(--text-secondary)'};
+  font-weight: 400;
 `;
 
 const LoadingOverlay = styled.div`
@@ -48,6 +105,7 @@ function Write() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();  // Get user from auth context
+  const { isDark } = useTheme();
 
   // Helper function to format dates to YYYY-MM-DD
   const formatDate = (dateString) => {
@@ -115,11 +173,21 @@ function Write() {
         
         if (existingCVs.data && existingCVs.data.length > 0) {
           // Use the first CV found
-          cvId = existingCVs.data[0].id;
+          const existingCV = existingCVs.data[0];
+          cvId = existingCV.id;
           console.log('Using existing CV with ID:', cvId);
           
+          // Merge existing data with new data, prioritizing new data where it exists
+          const updatedPersonalInfo = {
+            ...existingCV,
+            ...personalInfo,
+            // Ensure we don't override existing name if new values are undefined
+            first_name: personalInfo.first_name || existingCV.first_name,
+            last_name: personalInfo.last_name || existingCV.last_name,
+          };
+          
           // Update the existing CV
-          const updateResponse = await axiosInstance.put(`/api/cv_writer/cv/${cvId}/`, personalInfo);
+          const updateResponse = await axiosInstance.put(`/api/cv_writer/cv/`, updatedPersonalInfo);
           console.log('CV Update Response:', updateResponse.data);
         } else {
           // Create a new CV
@@ -364,19 +432,23 @@ function Write() {
   };
 
   return (
-    <Container>
-      <Header>
-        <Title>Create Your CV</Title>
-      </Header>
-
-      <CVFormContainer onCVCreated={createCV} isLoading={loading} />
-
-      {loading && (
-        <LoadingOverlay>
-          <LoadingText>{loadingMessage}</LoadingText>
-        </LoadingOverlay>
-      )}
-    </Container>
+    <>
+      <Navbar />
+      <Container>
+        {loading && (
+          <LoadingOverlay>
+            <LoadingText>{loadingMessage}</LoadingText>
+          </LoadingOverlay>
+        )}
+        <Header isDark={isDark}>
+          <TitleWrapper>
+            <Title isDark={isDark}>Create your CV</Title>
+            <SubTitle isDark={isDark}>Fill in your details to generate your professional CV</SubTitle>
+          </TitleWrapper>
+        </Header>
+        <CVFormContainer onCVCreated={createCV} isLoading={loading} />
+      </Container>
+    </>
   );
 }
 

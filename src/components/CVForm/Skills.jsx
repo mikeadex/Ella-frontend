@@ -1,364 +1,200 @@
-import { useState } from "react";
-import { commonRules, focusField, validateForm } from "../../utils/formValidation";
-import Notification from "../common/Notification";
-import { sharedStyles } from "../../utils/styling";
-import { SKILL_CATEGORIES } from "../../utils/constants";
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useTheme } from '../../context/ThemeContext';
+import { sharedStyles } from '../../utils/styling';
+import { FaPlus, FaTimes } from 'react-icons/fa';
+import SkillsFormModal from './Skills/SkillsFormModal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toastStyles } from '../../utils/formValidation';
 
-const Skills = ({ data, updateData }) => {
+const Skills = ({ data, updateData, errors }) => {
+  const { isDark } = useTheme();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [skills, setSkills] = useState(data || []);
-  const [currentSkill, setCurrentSkill] = useState({
-    name: "",
-    proficiency: "Intermediate",
-    isCustom: false,
-  });
-  const [errors, setErrors] = useState({});
-  const [notification, setNotification] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const validationRules = {
-    name: { required: true, label: "Skill Name" },
-    proficiency: { required: true, label: "Proficiency Level" },
-  };
-
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setCurrentSkill((prev) => ({
-      ...prev,
-      [id]: value,
-      isCustom: true,
-    }));
-
-    // Clear error for the field being edited
-    if (errors[id]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[id];
-        return newErrors;
-      });
+  useEffect(() => {
+    if (data) {
+      setSkills(data);
     }
-  };
+  }, [data]);
 
-  const handleAddSkill = (skillName = currentSkill.name) => {
-    if (!skillName.trim()) {
-      setNotification({
-        type: "error",
-        message: "Please enter a skill name",
-      });
-      return;
+  const handleAddSkills = (newSkills) => {
+    const updatedSkills = [...skills, ...newSkills];
+    if (updatedSkills.length > 12) {
+      // Show error in modal
+      return false;
     }
-
-    // Check if skill already exists
-    if (skills.some((skill) => skill.name.toLowerCase() === skillName.toLowerCase())) {
-      setNotification({
-        type: "error",
-        message: "This skill has already been added",
-      });
-      return;
-    }
-
-    // Add the new skill
-    const newSkill = {
-      name: skillName,
-      proficiency: currentSkill.proficiency,
-      category: selectedCategory || "Other",
-      isCustom: currentSkill.isCustom,
-    };
-
-    const updatedSkills = [...skills, newSkill];
     setSkills(updatedSkills);
-    updateData(updatedSkills, false); // Pass false to prevent auto-navigation
-
-    // Reset the form
-    setCurrentSkill({
-      name: "",
-      proficiency: "Intermediate",
-      isCustom: false,
-    });
-    setErrors({});
-    setNotification({
-      type: "success",
-      message: "Skill added successfully!",
-    });
+    updateData(updatedSkills);
+    setIsModalOpen(false);
+    return true;
   };
 
-  const handleDeleteSkill = (index) => {
-    const updatedSkills = skills.filter((_, i) => i !== index);
+  const handleRemoveSkill = (indexToRemove) => {
+    const updatedSkills = skills.filter((_, index) => index !== indexToRemove);
     setSkills(updatedSkills);
-    updateData(updatedSkills, false); // Pass false to prevent auto-navigation
-    setNotification({
-      type: "success",
-      message: "Skill deleted successfully!",
-    });
+    updateData(updatedSkills);
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (skills.length === 0) {
-      setNotification({
-        type: "error",
-        message: "Please add at least one skill",
-      });
-      return;
-    }
-
-    updateData(skills, true); // Pass true to allow navigation on final submit
-    setNotification({
-      type: "success",
-      message: "Skills saved successfully!",
-    });
-  };
-
-  const filteredSkills = SKILL_CATEGORIES.reduce((acc, category) => {
-    if (!selectedCategory || selectedCategory === category.name) {
-      const filtered = category.skills.filter((skill) =>
-        skill.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      if (filtered.length > 0) {
-        acc.push({
-          ...category,
-          skills: filtered,
-        });
-      }
-    }
-    return acc;
-  }, []);
-
-  const proficiencyLevels = [
-    "Beginner",
-    "Intermediate",
-    "Advanced",
-    "Expert",
-  ];
 
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 py-6">
-      {notification && (
-        <Notification {...notification} onClose={() => setNotification(null)} />
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
-        <div className={sharedStyles.experienceCard}>
-          <div className="bg-sky-950 text-white p-4 rounded-t-lg">
-            <h3 className="text-lg font-semibold">Skills</h3>
-          </div>
-
-          <div className="p-6">
-            {/* List of added skills */}
-            {skills.length > 0 && (
-              <div className="mb-6">
-                <h4 className="text-lg font-medium mb-4">Added Skills</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {skills.map((skill, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 rounded-lg p-4 relative group border border-gray-200"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSkill(index)}
-                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                      <div>
-                        <h5 className="font-medium">{skill.name}</h5>
-                        <p className="text-sm text-gray-600">
-                          {skill.proficiency}
-                        </p>
-                        {skill.category && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {skill.category}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Search and Filter */}
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700"
+    <div className={`${sharedStyles.card} ${isDark ? 'dark:bg-gray-900 dark:border-yellow-500/30 dark:shadow-yellow-500/20' : ''}`}>
+      <div className={`${sharedStyles.cardHeader} ${isDark ? 'dark:bg-gradient-to-r dark:from-yellow-900/40 dark:to-orange-900/40 dark:border-b dark:border-yellow-500/30' : ''}`}>
+        <h2 className={`text-xl font-semibold ${isDark ? 'dark:bg-clip-text dark:text-transparent dark:bg-gradient-to-r dark:from-yellow-400 dark:to-orange-400' : ''}`}>
+          Skills <span className="text-red-500">*</span>
+          <span className={`ml-2 text-sm font-normal ${isDark ? 'text-yellow-500/60' : 'text-gray-500'}`}>
+            (2-12 skills required)
+          </span>
+        </h2>
+      </div>
+      
+      <div className={`${sharedStyles.cardBody} ${isDark ? 'dark:bg-black' : ''}`}>
+        {skills.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+            <AnimatePresence>
+              {skills.map((skill, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className={`group relative aspect-square p-4 rounded-lg flex flex-col items-center justify-center text-center
+                    ${isDark 
+                      ? 'bg-gray-800 border border-yellow-500/30 hover:border-yellow-400/50' 
+                      : 'bg-gray-50 border border-gray-200 hover:border-gray-300'} 
+                    transition-colors duration-200`}
+                >
+                  <span className={`text-sm font-medium mb-1 
+                    ${isDark ? 'text-yellow-400' : 'text-gray-700'}`}
                   >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className={sharedStyles.inputStyle}
-                  >
-                    <option value="">All Categories</option>
-                    {SKILL_CATEGORIES.map((category) => (
-                      <option key={category.name} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex-1">
-                  <label
-                    htmlFor="search"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Search Skills
-                  </label>
-                  <input
-                    type="text"
-                    id="search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={sharedStyles.inputStyle}
-                    placeholder="Search for skills..."
-                  />
-                </div>
-              </div>
-
-              {/* Skill Suggestions */}
-              {filteredSkills.length > 0 && (
-                <div className="border rounded-lg divide-y">
-                  {filteredSkills.map((category) => (
-                    <div key={category.name} className="p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        {category.name}
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {category.skills.map((skill) => (
-                          <button
-                            key={skill}
-                            type="button"
-                            onClick={() => {
-                              setCurrentSkill((prev) => ({
-                                ...prev,
-                                name: skill,
-                                isCustom: false,
-                              }));
-                              handleAddSkill(skill);
-                            }}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                              />
-                            </svg>
-                            {skill}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Custom Skill Input */}
-              <div className="border-t pt-4">
-                <h4 className="text-lg font-medium mb-4">Add Custom Skill</h4>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-gray-700"
+                    {skill.name}
+                  </span>
+                  {skill.category && (
+                    <span className={`text-xs 
+                      ${isDark ? 'text-yellow-500/60' : 'text-gray-500'}`}
                     >
-                      Skill Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={currentSkill.name}
-                      onChange={handleChange}
-                      className={`${sharedStyles.inputStyle} ${
-                        errors.name ? sharedStyles.errorBorder : ""
-                      }`}
-                      placeholder="e.g., Project Management"
-                    />
-                    {errors.name && (
-                      <p className={sharedStyles.error}>{errors.name[0]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="proficiency"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Proficiency Level *
-                    </label>
-                    <select
-                      id="proficiency"
-                      value={currentSkill.proficiency}
-                      onChange={handleChange}
-                      className={`${sharedStyles.inputStyle} ${
-                        errors.proficiency ? sharedStyles.errorBorder : ""
-                      }`}
-                    >
-                      {proficiencyLevels.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.proficiency && (
-                      <p className={sharedStyles.error}>
-                        {errors.proficiency[0]}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4">
+                      {skill.category}
+                    </span>
+                  )}
                   <button
-                    type="button"
-                    onClick={() => handleAddSkill()}
-                    className={sharedStyles.buttonSuccess}
+                    onClick={() => handleRemoveSkill(index)}
+                    className={`absolute top-2 right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity
+                      ${isDark
+                        ? 'hover:bg-red-400/10 text-red-400'
+                        : 'hover:bg-red-50 text-red-500'}`}
+                    aria-label={`Remove ${skill.name}`}
+                    disabled={skills.length <= 2}
+                    title={skills.length <= 2 ? "At least 2 skills are required" : undefined}
                   >
-                    Add Custom Skill
+                    <FaTimes className="w-3 h-3" />
                   </button>
-                </div>
-              </div>
+                  {skill.proficiency && (
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <div className={`h-1 rounded-full overflow-hidden 
+                        ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}
+                      >
+                        <div
+                          className={`h-full rounded-full 
+                            ${isDark ? 'bg-yellow-400' : 'bg-blue-500'}`}
+                          style={{ width: `${(parseInt(skill.proficiency) / 5) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <div className={`mb-6 p-6 rounded-lg text-center border-2 border-dashed
+            ${isDark 
+              ? 'dark:border-yellow-500/20 dark:bg-gray-800/50' 
+              : 'border-gray-200 bg-gray-50'}`}
+          >
+            <h3 className={`text-lg font-medium mb-2 
+              ${isDark ? 'dark:text-yellow-400' : 'text-gray-900'}`}
+            >
+              Add Your Key Skills
+            </h3>
+            <p className={`text-sm mb-4 
+              ${isDark ? 'dark:text-gray-400' : 'text-gray-600'}`}
+            >
+              Skills are crucial for catching employers' attention. They:
+            </p>
+            <ul className={`text-sm space-y-2 mb-4 text-left mx-auto max-w-md
+              ${isDark ? 'dark:text-gray-400' : 'text-gray-600'}`}
+            >
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Help your CV pass through Applicant Tracking Systems (ATS)</span>
+              </li>
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Showcase your professional capabilities at a glance</span>
+              </li>
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Match you with relevant job requirements</span>
+              </li>
+              <li className="flex items-start">
+                <span className={`mr-2 ${isDark ? 'text-yellow-400' : 'text-blue-500'}`}>•</span>
+                <span>Highlight both technical and soft skills valuable to employers</span>
+              </li>
+            </ul>
+            <div 
+              className="mt-4 p-3 rounded-lg text-left text-sm"
+              style={toastStyles.warning.style}
+              role="alert"
+            >
+              <span className="mr-2" role="img" aria-label="warning">
+                {toastStyles.warning.icon}
+              </span>
+              Add between 2 and 12 skills that match your target job descriptions
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex justify-end space-x-4">
-          <button
-            type="submit"
-            className={sharedStyles.buttonPrimary}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          disabled={skills.length >= 12}
+          className={`flex items-center justify-center w-full p-3 rounded-md border-2 border-dashed
+            ${isDark 
+              ? 'dark:border-yellow-500/30 dark:text-yellow-400 hover:dark:border-yellow-400 hover:dark:text-yellow-300' 
+              : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-700'
+            } ${skills.length >= 12 ? 'opacity-50 cursor-not-allowed' : ''} transition-colors duration-200`}
+        >
+          <FaPlus className="mr-2" />
+          {skills.length >= 12 ? 'Maximum skills reached' : 'Add Skills'}
+        </button>
+
+        {errors?.skills && (
+          <div 
+            className="mt-4 p-3 rounded-lg text-sm flex items-center"
+            style={toastStyles.error.style}
+            role="alert"
           >
-            Save & Continue
-          </button>
-        </div>
-      </form>
+            <span className="mr-2" role="img" aria-label="error">
+              {toastStyles.error.icon}
+            </span>
+            {errors.skills}
+          </div>
+        )}
+
+        <SkillsFormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleAddSkills}
+          existingSkills={skills}
+          maxSkills={12}
+        />
+      </div>
     </div>
   );
+};
+
+Skills.propTypes = {
+  data: PropTypes.array,
+  updateData: PropTypes.func.isRequired,
+  errors: PropTypes.object
 };
 
 export default Skills;

@@ -1,76 +1,54 @@
 import styled from 'styled-components';
+import DOMPurify from 'dompurify';
 
 const ExperienceList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
 `;
 
 const ExperienceItem = styled.div`
-  padding: var(--spacing-xl);
-  background: var(--surface-color);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent-color);
-    box-shadow: var(--box-shadow-lg);
-  }
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 `;
 
 const JobTitle = styled.h3`
-  font-size: 1.25em;
+  font-size: 1.1em;
   font-weight: 600;
-  color: var(--secondary-color);
-  margin-bottom: var(--spacing-xs);
+  color: var(--text-dark);
+  margin: 0;
 `;
 
-const EmployerInfo = styled.p`
-  color: var(--accent-color);
-  font-weight: 500;
-  margin-bottom: var(--spacing-md);
-  font-size: 0.95em;
+const EmployerInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-light);
+  font-size: 0.9em;
+`;
+
+const Period = styled.span`
+  color: var(--text-light);
+  &:before {
+    content: "•";
+    margin: 0 0.5em;
+  }
+`;
+
+const Location = styled.span`
+  color: var(--text-light);
+  &:before {
+    content: "•";
+    margin: 0 0.5em;
+  }
 `;
 
 const JobDescription = styled.p`
+  font-size: 0.95em;
   color: var(--text-light);
   line-height: 1.6;
-  margin-bottom: var(--spacing-lg);
-`;
-
-const AchievementsSection = styled.div`
-  margin-top: var(--spacing-lg);
-`;
-
-const AchievementsTitle = styled.h4`
-  font-size: 1em;
-  font-weight: 600;
-  color: var(--secondary-color);
-  margin-bottom: var(--spacing-md);
-`;
-
-const AchievementsList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-`;
-
-const AchievementItem = styled.li`
-  display: flex;
-  gap: var(--spacing-sm);
-  color: var(--text-light);
-  line-height: 1.6;
-`;
-
-const AchievementBullet = styled.span`
-  color: var(--accent-color);
-  font-size: 1.2em;
-  line-height: 1.4;
+  margin: 0.5em 0;
 `;
 
 export const ModernWorkExperience = ({ experiences = [] }) => {
@@ -96,21 +74,29 @@ export const ModernWorkExperience = ({ experiences = [] }) => {
                     <ExperienceItem key={index}>
                         <JobTitle>{exp.title}</JobTitle>
                         <EmployerInfo>
-                            {exp.company} {exp.period ? `| ${exp.period}` : ''} {exp.location ? `| ${exp.location}` : ''}
+                            {exp.company} 
+                            {exp.period && <Period>{exp.period}</Period>} 
+                            {exp.location && <Location>{exp.location}</Location>}
                         </EmployerInfo>
                         {exp.description && <JobDescription>{exp.description}</JobDescription>}
                         {exp.responsibilities && exp.responsibilities.length > 0 && (
-                            <AchievementsSection>
-                                <AchievementsTitle>Key Achievements</AchievementsTitle>
-                                <AchievementsList>
-                                    {exp.responsibilities.map((achievement, idx) => (
-                                        <AchievementItem key={idx}>
-                                            <AchievementBullet>•</AchievementBullet>
-                                            {achievement}
-                                        </AchievementItem>
-                                    ))}
-                                </AchievementsList>
-                            </AchievementsSection>
+                          <div className="mt-2">
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                              Key Achievements
+                            </h4>
+                            <div 
+                              className="pl-4 space-y-1"
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(`
+                                  <ul class="list-disc text-sm text-gray-600 dark:text-gray-400">
+                                    ${exp.responsibilities.map(achievement => 
+                                      `<li>${achievement.replace(/<\/?p>/g, '')}</li>`
+                                    ).join('')}
+                                  </ul>
+                                `)
+                              }}
+                            />
+                          </div>
                         )}
                     </ExperienceItem>
                 );
