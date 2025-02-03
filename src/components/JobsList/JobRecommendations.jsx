@@ -16,16 +16,46 @@ const JobRecommendations = ({ onJobSelect }) => {
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/api/jobstract/opportunities/recommended/');
+      const response = await axiosInstance.get('/api/jobstract/opportunities/recommended/', {
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Job Recommendations Response:', response);
+      
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error('Invalid response format');
+      }
+      
       setRecommendations(response.data);
       setError(null);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setError('Create a CV to get personalized job recommendations');
+      console.error('Full Error Object:', err);
+      console.error('Error Response:', err.response);
+      console.error('Error Config:', err.config);
+      
+      if (err.response) {
+        switch (err.response.status) {
+          case 404:
+            setError('No job recommendations found. Try updating your CV.');
+            break;
+          case 500:
+            setError('Server error. Please try again later.');
+            break;
+          case 403:
+            setError('Access denied. Please log in or check your permissions.');
+            break;
+          default:
+            setError(`Unexpected error: ${err.response.status}`);
+        }
+      } else if (err.request) {
+        setError('No response from server. Check your internet connection.');
       } else {
-        setError('Failed to fetch recommendations. Please try again later.');
+        setError('Error setting up the request. Please try again.');
       }
-      console.error('Error fetching recommendations:', err);
     } finally {
       setLoading(false);
     }

@@ -148,14 +148,20 @@ function Write() {
 
       // Extract personal information from nested structure
       const personalInfo = {
-        first_name: formData.personalInfo.first_name,
-        last_name: formData.personalInfo.last_name,
-        email: formData.personalInfo.email || '',
-        address: formData.personalInfo.address,
-        city: formData.personalInfo.city,
-        country: formData.personalInfo.country,
-        contact_number: formData.personalInfo.contact_number,
+        first_name: formData.personalInfo.firstName || user.username,
+        last_name: formData.personalInfo.lastName || user.username,
+        email: formData.personalInfo.email || user.email,
+        address: formData.personalInfo.address || 'Not provided',
+        city: formData.personalInfo.city || 'Not specified',
+        country: formData.personalInfo.country || 'Not specified',
+        contact_number: formData.personalInfo.phone || 'Not provided',
         user: user.pk || user.id,
+        
+        // Add default values for optional fields
+        title: formData.personalInfo.title || 'Professional CV',
+        description: formData.personalInfo.description || 'My professional profile',
+        status: 'draft',
+        visibility: 'private',
       };
 
       // Only add additional_information if it exists and is not empty
@@ -257,8 +263,7 @@ function Write() {
         for (const skill of formData.skills) {
           const skillData = {
             skill_name: skill.name,
-            skill_level: proficiencyToLevel(skill.proficiency),
-            cv: cvId,
+            skill_level: skill.level || 'Intermediate',
             user: user.pk || user.id,
           };
           console.log('Sending skill data:', skillData);
@@ -268,15 +273,12 @@ function Write() {
       }
 
       setLoadingMessage("Adding certifications...");
-      if (formData.certification && formData.certification.length > 0) {
-        for (const cert of formData.certification) {
+      if (formData.certifications && formData.certifications.length > 0) {
+        for (const cert of formData.certifications) {
           const certificationData = {
-            certificate_name: cert.name,
-            issuer: cert.issuer,
-            certificate_date: formatDate(cert.issueDate),
-            expiry_date: cert.expiryDate ? formatDate(cert.expiryDate) : null,
-            credential_id: cert.credentialId || '',
-            cv: cvId,
+            certificate_name: cert.certificate_name || cert.name,
+            certificate_date: formatDate(cert.certificate_date),
+            certificate_link: cert.credential_id || null,
             user: user.pk || user.id,
           };
           console.log('Sending certification data:', certificationData);
@@ -299,7 +301,6 @@ function Write() {
         for (const interest of formData.interests) {
           const interestData = { 
             name: interest.name,
-            cv: cvId,
             user: user.pk || user.id,
           };
           console.log('Sending interest data:', interestData);
@@ -309,12 +310,12 @@ function Write() {
       }
 
       setLoadingMessage("Adding languages...");
-      if (formData.language && formData.language.length > 0) {
-        for (const lang of formData.language) {
+      if (formData.languages && formData.languages.length > 0) {
+        for (const lang of formData.languages) {
           const languageData = {
-            language_name: lang.name,
-            language_level: lang.level || "Basic",
-            cv: cvId,
+            language_name: lang.language || lang.name,
+            language_level: lang.proficiency || lang.level,
+            is_custom: true, // assuming custom languages can be added
             user: user.pk || user.id,
           };
           console.log('Sending language data:', languageData);

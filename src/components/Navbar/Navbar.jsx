@@ -150,6 +150,21 @@ const Navbar = () => {
                         My CVs
                       </Link>
                       <Link
+                        to="/cv/versions"
+                        className="flex items-center px-4 py-2 text-xs text-[#1d1d1f] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 mr-2 opacity-60"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        CV Versions
+                      </Link>
+                      <Link
                         to="/profile"
                         className="flex items-center px-4 py-2 text-xs text-[#1d1d1f] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                       >
@@ -334,6 +349,13 @@ const Navbar = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Dashboard
+                </Link>
+                <Link 
+                  to="/cv/versions" 
+                  className="block text-base font-medium text-[#1d1d1f] dark:text-gray-300 hover:text-[#06c] dark:hover:text-[#2997ff] transition-colors mb-3"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  CV Versions
                 </Link>
                 <Link 
                   to="/settings" 
