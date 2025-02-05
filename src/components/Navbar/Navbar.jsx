@@ -52,7 +52,7 @@ const Navbar = () => {
             </Link>
 
             <Link 
-              to="/write" 
+              to="/cv-writer/write" 
               className="text-xs font-normal text-[#1d1d1f] dark:text-gray-300 hover:opacity-80 transition-opacity"
             >
               Write CV
@@ -289,7 +289,7 @@ const Navbar = () => {
             Home
           </Link>
           <Link 
-            to="/write" 
+            to="/cv-writer/write" 
             className="block text-base font-medium text-[#1d1d1f] dark:text-gray-300 hover:text-[#06c] dark:hover:text-[#2997ff] transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >

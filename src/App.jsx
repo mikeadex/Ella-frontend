@@ -64,7 +64,8 @@ function AppRoutes() {
             <Routes>
               {/* Public routes (no authentication required) */}
               <Route path="/" element={<Home />} />
-              <Route path="/cv-writer" element={<CVWriter />} />
+              <Route path="/cv-writer" element={<Navigate to="/cv-writer/write" />} />
+              <Route path="/cv-writer/write" element={<CVWriter />} />
               <Route path="/cv-writer/preview/:id" element={<CVPreviewPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -96,7 +97,7 @@ function AppRoutes() {
                     path="/write"
                     element={
                       <ProtectedRoute>
-                        <Write />
+                        <Navigate to="/cv-writer/write" />
                       </ProtectedRoute>
                     }
                   />
