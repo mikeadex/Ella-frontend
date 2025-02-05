@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 
@@ -10,51 +10,16 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getAccessToken = useCallback(() => {
-    return localStorage.getItem('access_token');
-  }, []);
-
-  const getRefreshToken = useCallback(() => {
-    return localStorage.getItem('refresh_token');
-  }, []);
-
-  const isAuthenticated = useCallback(() => {
-    const token = getAccessToken();
-    return !!token;
-  }, [getAccessToken]);
-
-  const refreshAccessToken = async () => {
-    try {
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        throw new Error('No refresh token');
-      }
-
-      const response = await axiosInstance.post('/api/token/refresh/', { 
-        refresh: refreshToken 
-      });
-
-      const { access } = response.data;
-      localStorage.setItem('access_token', access);
-      return access;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      logout();
-      return null;
-    }
-  };
-
   const login = async (email, password) => {
     try {
       const response = await axiosInstance.post('/api/auth/login/', { email, password });
-      console.log('Login response:', response.data);
       const { refresh, access, user: userData } = response.data;
       
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
+      
       setUser(userData);
       
-      // Check if we have a redirect path
       const from = location?.state?.from || '/dashboard';
       navigate(from, { replace: true });
       
@@ -65,77 +30,87 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = useCallback(() => {
+  const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setUser(null);
     navigate('/login');
-  }, [navigate]);
+  };
 
-  const checkAuth = useCallback(async () => {
+  const checkAuth = async () => {
+    const token = localStorage.getItem('access_token');
+    
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const token = getAccessToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await axiosInstance.get('/api/auth/user/');
-        console.log('Auth check response:', response.data);
-        setUser(response.data);
-      } catch (error) {
-        // If user retrieval fails, try refreshing token
-        if (error.response?.status === 401) {
-          const newToken = await refreshAccessToken();
-          if (newToken) {
-            // Retry user retrieval with new token
-            const response = await axiosInstance.get('/api/auth/user/');
-            setUser(response.data);
-          }
-        } else {
-          throw error;
-        }
-      }
+      const response = await axiosInstance.get('/api/auth/user/');
+      setUser(response.data);
     } catch (error) {
-      console.error('Auth check error:', error);
-      logout();
+      // If user retrieval fails, try refreshing token
+      if (error.response?.status === 401) {
+        try {
+          const refreshToken = localStorage.getItem('refresh_token');
+          const refreshResponse = await axiosInstance.post('/api/token/refresh/', { 
+            refresh: refreshToken 
+          });
+          
+          localStorage.setItem('access_token', refreshResponse.data.access);
+          
+          // Retry user fetch
+          const userResponse = await axiosInstance.get('/api/auth/user/');
+          setUser(userResponse.data);
+        } catch (refreshError) {
+          logout();
+        }
+      } else {
+        logout();
+      }
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken, logout, refreshAccessToken]);
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  const value = {
-    user,
-    loading,
-    isAuthenticated: isAuthenticated(),
-    login,
-    logout,
-    getAccessToken,
-    refreshAccessToken,
   };
 
-  if (loading) {
-    return <div>Loading...</div>; // or your loading component
-  }
+  // Memoize the context value to prevent unnecessary re-renders
+  const authContextValue = useMemo(() => ({
+    user,
+    loading,
+    login,
+    logout,
+    isAuthenticated: !!user
+  }), [user, loading]);
+
+  // Only run auth check once on mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const performAuthCheck = async () => {
+      if (isMounted) {
+        await checkAuth();
+      }
+    };
+
+    performAuthCheck();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
+    <AuthContext.Provider value={authContextValue}>
+      {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
 };
 
+// Custom hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
-
-export default AuthContext;
