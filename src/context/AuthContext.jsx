@@ -14,16 +14,41 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('access_token');
   }, []);
 
+  const getRefreshToken = useCallback(() => {
+    return localStorage.getItem('refresh_token');
+  }, []);
+
   const isAuthenticated = useCallback(() => {
     const token = getAccessToken();
     return !!token;
   }, [getAccessToken]);
 
+  const refreshAccessToken = async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token');
+      }
+
+      const response = await axiosInstance.post('/api/token/refresh/', { 
+        refresh: refreshToken 
+      });
+
+      const { access } = response.data;
+      localStorage.setItem('access_token', access);
+      return access;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      logout();
+      return null;
+    }
+  };
+
   const login = async (email, password) => {
     try {
       const response = await axiosInstance.post('/api/auth/login/', { email, password });
       console.log('Login response:', response.data);
-      const { access, refresh, user: userData } = response.data;
+      const { refresh, access, user: userData } = response.data;
       
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
@@ -55,18 +80,30 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const response = await axiosInstance.get('/api/auth/user/');
-      console.log('Auth check response:', response.data);
-      setUser(response.data);
+      try {
+        const response = await axiosInstance.get('/api/auth/user/');
+        console.log('Auth check response:', response.data);
+        setUser(response.data);
+      } catch (error) {
+        // If user retrieval fails, try refreshing token
+        if (error.response?.status === 401) {
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            // Retry user retrieval with new token
+            const response = await axiosInstance.get('/api/auth/user/');
+            setUser(response.data);
+          }
+        } else {
+          throw error;
+        }
+      }
     } catch (error) {
       console.error('Auth check error:', error);
-      if (error.response?.status === 401) {
-        logout();
-      }
+      logout();
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken, logout]);
+  }, [getAccessToken, logout, refreshAccessToken]);
 
   useEffect(() => {
     checkAuth();
@@ -79,6 +116,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     getAccessToken,
+    refreshAccessToken,
   };
 
   if (loading) {
