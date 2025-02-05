@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api/cv_writer';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = `${BASE_URL}/api/cv_writer`;
 
-// Configure axios to include credentials
-axios.defaults.withCredentials = true;
+const cvApi = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
 
 // Get auth token from localStorage
 const getAuthHeader = () => ({
@@ -12,7 +15,7 @@ const getAuthHeader = () => ({
 
 export const fetchCVById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/cv/${id}/detail/`, {
+    const response = await cvApi.get(`cv/${id}/detail/`, {
       headers: getAuthHeader()
     });
     return response.data;
@@ -24,7 +27,7 @@ export const fetchCVById = async (id) => {
 
 export const createCV = async (cvData) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/cv/`, cvData, {
+    const response = await cvApi.post('cv/', cvData, {
       headers: {
         ...getAuthHeader(),
         'Content-Type': 'application/json',
@@ -39,7 +42,7 @@ export const createCV = async (cvData) => {
 
 export const updateCV = async (id, cvData) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/cv/${id}/`, cvData, {
+    const response = await cvApi.put(`cv/${id}/`, cvData, {
       headers: {
         ...getAuthHeader(),
         'Content-Type': 'application/json',
@@ -54,7 +57,7 @@ export const updateCV = async (id, cvData) => {
 
 export const improveCV = async (id) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/cv/${id}/improve/`, {}, {
+    const response = await cvApi.post(`cv/${id}/improve/`, {}, {
       headers: getAuthHeader()
     });
     return response.data;
@@ -67,7 +70,7 @@ export const improveCV = async (id) => {
 // Fetch CV sections
 export const fetchProfessionalSummary = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/professional-summary/${cvId}/`, {
+    const response = await cvApi.get(`professional-summary/${cvId}/`, {
       headers: getAuthHeader()
     });
     return response.data;
@@ -79,7 +82,7 @@ export const fetchProfessionalSummary = async (cvId) => {
 
 export const fetchExperiences = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/experience/`, {
+    const response = await cvApi.get('experience/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -92,7 +95,7 @@ export const fetchExperiences = async (cvId) => {
 
 export const fetchEducation = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/education/`, {
+    const response = await cvApi.get('education/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -105,7 +108,7 @@ export const fetchEducation = async (cvId) => {
 
 export const fetchSkills = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/skill/`, {
+    const response = await cvApi.get('skill/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -118,7 +121,7 @@ export const fetchSkills = async (cvId) => {
 
 export const fetchLanguages = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/language/`, {
+    const response = await cvApi.get('language/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -131,7 +134,7 @@ export const fetchLanguages = async (cvId) => {
 
 export const fetchCertifications = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/certification/`, {
+    const response = await cvApi.get('certification/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -144,7 +147,7 @@ export const fetchCertifications = async (cvId) => {
 
 export const fetchInterests = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/interest/`, {
+    const response = await cvApi.get('interest/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -157,7 +160,7 @@ export const fetchInterests = async (cvId) => {
 
 export const fetchSocialMedia = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/social-media/`, {
+    const response = await cvApi.get('social-media/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });
@@ -170,7 +173,7 @@ export const fetchSocialMedia = async (cvId) => {
 
 export const fetchReferences = async (cvId) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/reference/`, {
+    const response = await cvApi.get('reference/', {
       headers: getAuthHeader(),
       params: { cv: cvId }
     });

@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ACCESS_TOKEN } from '../constants';
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const oauthCallbackUrl = `${BASE_URL}/api/linkedin/profiles/oauth_callback/`;
+const syncProfileUrl = (profileId) => `${BASE_URL}/api/linkedin/profiles/${profileId}/sync_profile/`;
+
 const LinkedInCallback = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
@@ -45,7 +49,7 @@ const LinkedInCallback = () => {
         // Exchange code for access token
         console.log('Exchanging code for access token...');
         const response = await axios.post(
-          'http://localhost:8000/api/linkedin/profiles/oauth_callback/',
+          oauthCallbackUrl,
           {
             code,
             state: returnedState
@@ -63,7 +67,7 @@ const LinkedInCallback = () => {
         if (response.data.profile_id) {
           console.log('Syncing LinkedIn profile...');
           await axios.post(
-            `http://localhost:8000/api/linkedin/profiles/${response.data.profile_id}/sync_profile/`,
+            syncProfileUrl(response.data.profile_id),
             null,
             {
               headers: {
