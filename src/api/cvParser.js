@@ -14,7 +14,7 @@ const uploadDocument = async (file) => {
   formData.append('file', file);
   
   try {
-    const response = await axios.post(`${BASE_URL}/cv-parser/parse_document/`, formData, {
+    const response = await axios.post(`${BASE_URL}/parse_document/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`
