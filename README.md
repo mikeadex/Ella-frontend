@@ -183,13 +183,13 @@ Ella is a cutting-edge React-based web application designed to revolutionize pro
 ```
 Frontend (React)
 │
-├── Hosted on Vercel/Netlify
+├── Hosted on Vercel
 │
 └── ↔️ Communicates with
     
 Backend (Django)
 │
-├── Hosted on Heroku/AWS
+├── Hosted on Render
 │
 └── Provides RESTful API Endpoints
 ```
