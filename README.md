@@ -118,6 +118,23 @@ Ella is a cutting-edge React-based web application designed to revolutionize pro
   * Typography
   * Component library
 
+## 🌐 Project Information
+
+**Project Domain**: [https://www.ellacv.com](https://www.ellacv.com)
+
+## 🔗 Repositories
+
+**Frontend Repository**: [https://github.com/mikeadex/Ella-frontend](https://github.com/mikeadex/Ella-frontend)
+**Backend Repository**: [https://github.com/mikeadex/project3_backend](https://github.com/mikeadex/project3_backend)
+
+### Repository Structure
+- `src/`: Main source code directory
+  - `components/`: Reusable React components
+  - `context/`: React context providers
+  - `pages/`: Top-level page components
+  - `utils/`: Utility functions and helpers
+  - `styles/`: Global styling and theme configurations
+
 ## 🔗 Full-Stack Implementation
 
 ### Backend Integration
