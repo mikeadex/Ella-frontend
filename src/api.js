@@ -9,7 +9,6 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true,
 })
 console.log('Base URL:', BASE_URL);
 
@@ -40,7 +39,6 @@ api.refreshToken = async () => {
         console.error('Token refresh failed', error);
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
-        window.location.href = '/login';
         throw error;
     }
 };
@@ -51,8 +49,26 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Handle timeout errors specifically
+        if (error.code === 'ECONNABORTED') {
+            console.error('Request timed out:', originalRequest.url);
+            error.message = 'The request is taking too long to process. Please try again later.';
+            return Promise.reject(error);
+        }
+
+        // Handle server errors with more specific messages
+        if (error.response?.status === 500) {
+            console.error('Server error:', error.response.data);
+            if (error.response.data?.error) {
+                error.message = `Server error: ${error.response.data.error}`;
+            } else {
+                error.message = 'The server encountered an error. Please try again later.';
+            }
+            return Promise.reject(error);
+        }
+
         // If error is not 401 or request already retried, reject
-        if (error.response.status !== 401 || originalRequest._retry) {
+        if (!error.response || error.response.status !== 401 || originalRequest._retry) {
             return Promise.reject(error);
         }
 

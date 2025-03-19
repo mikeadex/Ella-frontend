@@ -46,6 +46,8 @@ import Sitemap from './pages/Sitemap';
 import RouteTransition from './components/PageTransition/RouteTransition';
 import Applications from './pages/Applications'; // Import Applications page
 import CVVersionManager from './components/CVVersionManager'; // Import CVVersionManager
+import AICVParserPage from './pages/AICVParserPage';
+import CVRewriter from './components/CVRewriter';
 
 // Import global styles
 import './styles/index.css';
@@ -53,7 +55,17 @@ import './styles/variables.css';
 import './styles/global.css';
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="flex flex-col min-h-screen">
@@ -91,115 +103,120 @@ function AppRoutes() {
               <Route path="/sitemap" element={<Sitemap />} />
 
               {/* Protected routes (require authentication) */}
-              {isAuthenticated && (
-                <>
-                  <Route
-                    path="/write"
-                    element={
-                      <ProtectedRoute>
-                        <Navigate to="/cv-writer/write" />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv-writer/write"
-                    element={
-                      <ProtectedRoute>
-                        <CVWriter />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv-writer/preview/:cvId"
-                    element={
-                      <ProtectedRoute>
-                        <CVPreview />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv-writer/improvements/:cvId"
-                    element={
-                      <ProtectedRoute>
-                        <CVImprovements />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/subscription"
-                    element={
-                      <ProtectedRoute>
-                        <Subscription />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv-parser"
-                    element={
-                      <ProtectedRoute>
-                        <CVParserPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/linkedin-test"
-                    element={
-                      <ProtectedRoute>
-                        <LinkedInTest />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv-templates"
-                    element={
-                      <ProtectedRoute>
-                        <CVTemplates />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/cv/:cvId/improvements"
-                    element={
-                      <ProtectedRoute>
-                        <CVImprovements />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/logout"
-                    element={
-                      <ProtectedRoute>
-                        <Logout />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/applications"
-                    element={
-                      <ProtectedRoute>
-                        <Applications />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/cv/versions" element={<CVVersionManager />} />
-                </>
-              )}
+              <Route
+                path="/write"
+                element={
+                  <ProtectedRoute>
+                    <Navigate to="/cv-writer/write" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv-writer/write"
+                element={
+                  <ProtectedRoute>
+                    <CVWriter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv-writer/preview/:cvId"
+                element={
+                  <ProtectedRoute>
+                    <CVPreview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv-writer/improvements/:cvId"
+                element={
+                  <ProtectedRoute>
+                    <CVImprovements />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <Subscription />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv-parser"
+                element={
+                  <ProtectedRoute>
+                    <CVParserPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai-cv-parser"
+                element={
+                  <ProtectedRoute>
+                    <AICVParserPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/linkedin-test"
+                element={
+                  <ProtectedRoute>
+                    <LinkedInTest />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv-templates"
+                element={
+                  <ProtectedRoute>
+                    <CVTemplates />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cv/:cvId/improvements"
+                element={
+                  <ProtectedRoute>
+                    <CVImprovements />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/logout"
+                element={
+                  <ProtectedRoute>
+                    <Logout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/applications"
+                element={
+                  <ProtectedRoute>
+                    <Applications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/cv/versions" element={<CVVersionManager />} />
+              <Route path="/cv-rewriter" element={<CVRewriter />} />
             </Routes>
           </RouteTransition>
         </div>

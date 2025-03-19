@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import axiosInstance from '../api/axios';
+import api from '../api';
+import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 
 const AuthContext = createContext(null);
 
@@ -13,7 +14,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, rememberMe = false) => {
     try {
-      const response = await axiosInstance.post('/api/auth/login/', { 
+      const response = await api.post('/api/auth/login/', { 
         email, 
         password,
         remember_me: rememberMe
@@ -21,14 +22,9 @@ export const AuthProvider = ({ children }) => {
       
       const { refresh, access, user: userData } = response.data;
       
-      // Secure token storage with optional persistence
-      if (rememberMe) {
-        localStorage.setItem('access_token', access);
-        localStorage.setItem('refresh_token', refresh);
-      } else {
-        sessionStorage.setItem('access_token', access);
-        sessionStorage.setItem('refresh_token', refresh);
-      }
+      // Store tokens
+      localStorage.setItem(ACCESS_TOKEN, access);
+      localStorage.setItem(REFRESH_TOKEN, refresh);
       
       setUser(userData);
       
@@ -43,49 +39,44 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Clear tokens from both storage mechanisms
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
+    // Clear tokens
+    localStorage.removeItem(ACCESS_TOKEN);
+    localStorage.removeItem(REFRESH_TOKEN);
     
     setUser(null);
     navigate('/login');
   };
 
   const refreshTokens = async () => {
-    const refreshToken = localStorage.getItem('refresh_token') || 
-                         sessionStorage.getItem('refresh_token');
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN);
     
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
 
     try {
-      const response = await axiosInstance.post('/api/token/refresh/', { 
+      const response = await api.post('/api/token/refresh/', { 
         refresh: refreshToken 
       });
       
       const { access: newAccessToken } = response.data;
       
-      // Store new token in the same storage as original
-      if (localStorage.getItem('refresh_token')) {
-        localStorage.setItem('access_token', newAccessToken);
-      } else {
-        sessionStorage.setItem('access_token', newAccessToken);
-      }
+      // Store new token
+      localStorage.setItem(ACCESS_TOKEN, newAccessToken);
+
+      // Update API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
 
       return newAccessToken;
     } catch (error) {
       console.error('Token refresh failed:', error);
-      logout(); // Force logout on refresh failure
+      // Don't force logout on refresh failure during initial check
       throw error;
     }
   };
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('access_token') || 
-                  sessionStorage.getItem('access_token');
+    const token = localStorage.getItem(ACCESS_TOKEN);
     
     if (!token) {
       setLoading(false);
@@ -102,11 +93,17 @@ export const AuthProvider = ({ children }) => {
         await refreshTokens();
       }
 
-      const response = await axiosInstance.get('/api/auth/user/');
+      // Set the token in API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      const response = await api.get('/api/auth/user/');
       setUser(response.data);
     } catch (error) {
       console.error('Authentication check failed:', error);
-      logout();
+      // Only logout if it's not the initial check and it's not a refresh token error
+      if (!loading && error.response?.status !== 401) {
+        logout();
+      }
     } finally {
       setLoading(false);
     }
@@ -122,7 +119,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     updateProfile: async (profileData) => {
       try {
-        const response = await axiosInstance.patch('/api/auth/profile/', profileData);
+        const response = await api.patch('/api/auth/profile/', profileData);
         setUser(prevUser => ({ ...prevUser, ...response.data }));
         return response.data;
       } catch (error) {
@@ -149,9 +146,18 @@ export const AuthProvider = ({ children }) => {
     };
   }, []); // Empty dependency array
 
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider value={authContextValue}>
-      {loading ? <div>Loading...</div> : children}
+      {children}
     </AuthContext.Provider>
   );
 };
