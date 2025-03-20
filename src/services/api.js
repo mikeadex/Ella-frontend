@@ -23,7 +23,7 @@ const getApiBaseUrl = () => {
     
   // Return production or development URL
   return isProduction 
-    ? 'https://api.ellacvwriter.com' 
+    ? 'https://ella-backend-gw8c.onrender.com' 
     : 'http://localhost:8000';
 };
 
