@@ -130,4 +130,5 @@ class CVImprovementService {
     }
 }
 
-export default new CVImprovementService();
+export const cvImprovementService = new CVImprovementService();
+export default cvImprovementService;
