@@ -1,0 +1,27 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f4f8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d9e2ec;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="100%" height="100%" fill="url(#grad)"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="400" cy="250" r="100" fill="#4299e1" opacity="0.1"/>
+  <circle cx="350" cy="180" r="60" fill="#3182ce" opacity="0.1"/>
+  <circle cx="450" cy="300" r="80" fill="#2b6cb0" opacity="0.1"/>
+  
+  <!-- Centered text -->
+  <text x="400" y="230" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#4a5568" text-anchor="middle">Ella Blog</text>
+  <text x="400" y="280" font-family="Arial, sans-serif" font-size="20" fill="#718096" text-anchor="middle">Image loading...</text>
+  
+  <!-- Logo-like element -->
+  <g transform="translate(400, 160) scale(0.5)">
+    <rect x="-40" y="-20" width="80" height="40" rx="8" fill="#4299e1"/>
+    <text x="0" y="8" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">ELLA</text>
+  </g>
+</svg>

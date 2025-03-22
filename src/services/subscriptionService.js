@@ -13,7 +13,7 @@ class SubscriptionService {
 
     static async getCurrentSubscription() {
         try {
-            const response = await api.get('/api/subscription/subscriptions/summary/');
+            const response = await api.get('/api/subscription/user-subscriptions/summary/');
             return response.data;
         } catch (error) {
             console.error('Error fetching current subscription:', error);
@@ -24,7 +24,7 @@ class SubscriptionService {
     static async createPaymentIntent(planId) {
         try {
             console.log('Creating payment intent for plan:', planId);
-            const response = await api.post('/api/subscription/subscriptions/create_payment_intent/', {
+            const response = await api.post('/api/subscription/user-subscriptions/create_payment_intent/', {
                 plan_id: planId
             });
             console.log('Payment intent created:', response.data);
@@ -45,7 +45,7 @@ class SubscriptionService {
                 ...(paymentMethodId && { payment_method_id: paymentMethodId })
             };
 
-            const response = await api.post('/api/subscription/subscriptions/', data);
+            const response = await api.post('/api/subscription/user-subscriptions/', data);
             console.log('Subscription created:', response.data);
             return response.data;
         } catch (error) {
@@ -56,7 +56,7 @@ class SubscriptionService {
 
     static async confirmSubscription(subscriptionId, paymentMethodId) {
         try {
-            const response = await api.post(`/api/subscription/subscriptions/${subscriptionId}/confirm/`, {
+            const response = await api.post(`/api/subscription/user-subscriptions/${subscriptionId}/confirm/`, {
                 payment_method_id: paymentMethodId
             });
             return response.data;
@@ -68,7 +68,7 @@ class SubscriptionService {
 
     static async cancelSubscription(subscriptionId) {
         try {
-            const response = await api.post(`/api/subscription/subscriptions/${subscriptionId}/cancel/`);
+            const response = await api.post(`/api/subscription/user-subscriptions/${subscriptionId}/cancel/`);
             return response.data;
         } catch (error) {
             console.error('Error cancelling subscription:', error);
@@ -78,7 +78,7 @@ class SubscriptionService {
 
     static async checkAccess(feature) {
         try {
-            const response = await api.post('/api/subscription/subscriptions/check_access/', {
+            const response = await api.post('/api/subscription/user-subscriptions/check_access/', {
                 feature: feature
             });
             return response.data;

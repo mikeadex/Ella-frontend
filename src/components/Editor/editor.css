@@ -1,0 +1,148 @@
+/* Editor Styles */
+/* Remove the tilde import that doesn't work with Vite */
+/* @import '~@fortawesome/fontawesome-free/css/all.min.css'; */
+
+.tiptap {
+  min-height: 250px;
+  padding: 1rem;
+  outline: none;
+}
+
+.tiptap:focus {
+  outline: none;
+}
+
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.tiptap li {
+  margin-bottom: 0.5rem;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid #b4b4b4;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.tiptap code {
+  background-color: #f1f1f1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+.tiptap pre {
+  background-color: #24292e;
+  color: #e6e6e6;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: monospace;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.tiptap pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.tiptap a {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.tiptap a:hover {
+  text-decoration: none;
+}
+
+.tiptap .ProseMirror-selectednode {
+  outline: 2px solid #3182ce;
+}
+
+/* Medium-like placeholder styling */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5em;
+}
+
+.tiptap ul[data-type="taskList"] li > label {
+  margin-right: 0.5em;
+  user-select: none;
+}
+
+.tiptap ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+/* Dark mode adjustments */
+.dark .tiptap code {
+  background-color: #2d3748;
+  color: #e2e8f0;
+}
+
+.dark .tiptap pre {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+.dark .tiptap blockquote {
+  border-left-color: #4a5568;
+}
+
+.dark .tiptap p.is-editor-empty:first-child::before {
+  color: #718096;
+}

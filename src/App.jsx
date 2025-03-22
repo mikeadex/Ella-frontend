@@ -48,6 +48,7 @@ import Applications from './pages/Applications'; // Import Applications page
 import CVVersionManager from './components/CVVersionManager'; // Import CVVersionManager
 import AICVParserPage from './pages/AICVParserPage';
 import CVRewriter from './components/CVRewriter';
+import { Toaster } from 'react-hot-toast';
 
 // Import global styles
 import './styles/index.css';
@@ -89,7 +90,7 @@ function AppRoutes() {
               <Route path="/features" element={<Features />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<About />} />
-              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/*" element={<Blog />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/help" element={<Help />} />
@@ -234,6 +235,28 @@ function App() {
             <CVFormProvider>
               <RootErrorBoundary>
                 <AppRoutes />
+                <Toaster 
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: '#363636',
+                      color: '#fff',
+                    },
+                    success: {
+                      duration: 3000,
+                      style: {
+                        background: '#166534',
+                      },
+                    },
+                    error: {
+                      duration: 5000,
+                      style: {
+                        background: '#991b1b',
+                      },
+                    },
+                  }}
+                />
               </RootErrorBoundary>
             </CVFormProvider>
           </ThemeProvider>

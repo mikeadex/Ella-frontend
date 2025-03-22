@@ -9,7 +9,9 @@ import {
   CreditCardIcon,
   PlusIcon,
   ChevronRightIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  PencilIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 import Navbar from '../components/Navbar/Navbar';
 import JobsList from '../components/JobsList/JobsList';
@@ -48,30 +50,65 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [cvs, setCvs] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [blogPosts, setBlogPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Safely calculate dashboard metrics with null checks
   const dashboardMetrics = {
-    totalCVs: cvs.length,
-    matchedJobs: jobs.length,
+    totalCVs: cvs?.length || 0,
+    matchedJobs: jobs?.length || 0,
     totalApplications: 0, // TODO: Add actual applications count
-    cvStatus: cvs.length > 0 ? 'Good' : 'Needs Improvement',
+    cvStatus: (cvs?.length || 0) > 0 ? 'Good' : 'Needs Improvement',
     jobApplyClicks: 0, // TODO: Add actual job apply clicks
-    cvCreationAttempts: cvs.length
+    cvCreationAttempts: cvs?.length || 0,
+    totalBlogPosts: blogPosts?.length || 0
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [cvsResponse, jobsResponse] = await Promise.all([
-          axiosInstance.get('/api/cv_writer/cv/'),
-          axiosInstance.get('/api/jobstract/opportunities/')
-        ]);
+        setLoading(true);
+        setError(null);
         
-        setCvs(cvsResponse.data);
-        setJobs(jobsResponse.data);
+        // Check if token exists to prevent unnecessary API calls
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        if (!token) {
+          console.warn('No authentication token found, skipping protected API calls');
+          setLoading(false);
+          return;
+        }
+        
+        // Add error handling for each request separately
+        try {
+          const cvsResponse = await axiosInstance.get('/api/cv_writer/cv/');
+          setCvs(Array.isArray(cvsResponse.data) ? cvsResponse.data : []);
+        } catch (cvsError) {
+          console.error('Error fetching CVs:', cvsError);
+          setCvs([]);
+        }
+        
+        try {
+          const jobsResponse = await axiosInstance.get('/api/jobstract/opportunities/');
+          setJobs(Array.isArray(jobsResponse.data) ? jobsResponse.data : []);
+        } catch (jobsError) {
+          console.error('Error fetching jobs:', jobsError);
+          setJobs([]);
+        }
+        
+        try {
+          const blogResponse = await axiosInstance.get('/api/blog/posts/');
+          // Handle potential missing results property
+          const blogData = blogResponse.data || {};
+          setBlogPosts(Array.isArray(blogData.results) ? blogData.results : []);
+        } catch (blogError) {
+          console.error('Error fetching blog posts:', blogError);
+          setBlogPosts([]);
+        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -79,6 +116,12 @@ const Dashboard = () => {
 
     if (user) {
       fetchData();
+    } else {
+      // Clear data and loading state if no user
+      setCvs([]);
+      setJobs([]);
+      setBlogPosts([]);
+      setLoading(false);
     }
   }, [user]);
 
@@ -218,6 +261,156 @@ const Dashboard = () => {
     );
   };
 
+  const BlogManagementSection = () => {
+    const blogQuickLinks = [
+      {
+        name: 'Create Post',
+        icon: PencilIcon,
+        to: '/blog/create',
+        description: 'Write a new blog post',
+        color: 'bg-purple-50 hover:bg-purple-100',
+        textColor: 'text-purple-600 hover:text-purple-700'
+      },
+      {
+        name: 'Manage Posts',
+        icon: DocumentTextIcon,
+        to: '/blog/manage',
+        description: 'Edit or delete existing posts',
+        color: 'bg-blue-50 hover:bg-blue-100',
+        textColor: 'text-blue-600 hover:text-blue-700'
+      },
+      {
+        name: 'View Blog',
+        icon: BookOpenIcon,
+        to: '/blog',
+        description: 'See your published content',
+        color: 'bg-green-50 hover:bg-green-100',
+        textColor: 'text-green-600 hover:text-green-700'
+      }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Blog Metrics */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-black/80 rounded-xl border border-gray-200 dark:border-[#1d1d1f] p-4 text-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Total Posts
+            </h3>
+            <p className="text-3xl font-bold text-[#1d1d1f] dark:text-white">
+              {dashboardMetrics.totalBlogPosts}
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-black/80 rounded-xl border border-gray-200 dark:border-[#1d1d1f] p-4 text-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Published
+            </h3>
+            <p className="text-3xl font-bold text-[#1d1d1f] dark:text-white">
+              {blogPosts.filter(post => post.status === 'published').length}
+            </p>
+          </div>
+          
+          <div className="bg-white dark:bg-black/80 rounded-xl border border-gray-200 dark:border-[#1d1d1f] p-4 text-center sm:col-span-1 col-span-2">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Drafts
+            </h3>
+            <p className="text-3xl font-bold text-[#1d1d1f] dark:text-white">
+              {blogPosts.filter(post => post.status === 'draft').length}
+            </p>
+          </div>
+        </div>
+
+        {/* Blog Quick Links */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+          {blogQuickLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.to}
+              className="group block"
+            >
+              <div className={`
+                ${link.color}
+                rounded-xl p-4 
+                flex items-center 
+                space-x-4 
+                transform transition-all duration-300 
+                hover:scale-105 
+                hover:shadow-lg
+                text-center flex-col justify-center
+                bg-opacity-90 hover:bg-opacity-100
+                border border-transparent
+                hover:border-opacity-50
+              `}>
+                <link.icon className={`h-8 w-8 ${link.textColor} mb-2`} />
+                <div>
+                  <h3 className={`text-base font-semibold ${link.textColor}`}>
+                    {link.name}
+                  </h3>
+                  <p className={`text-sm ${link.textColor} bg-opacity-60`}>
+                    {link.description}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Recent Blog Posts */}
+        <div className="mt-6">
+          <h2 className="text-xl font-bold mb-4 text-[#1d1d1f] dark:text-white">Recent Posts</h2>
+          {loading ? (
+            <div className="text-center py-12 text-[#424245] dark:text-gray-300">Loading...</div>
+          ) : blogPosts.length === 0 ? (
+            <div className="text-center py-12 text-[#424245] dark:text-gray-300">
+              No blog posts found. Create your first post!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {blogPosts.slice(0, 5).map((post) => (
+                <div key={post.id} className="bg-white dark:bg-black/80 rounded-lg border border-gray-200 dark:border-[#1d1d1f] p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium text-[#1d1d1f] dark:text-white">{post.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {formatRelativeTime(post.updated_at)} • {post.status === 'published' ? 'Published' : 'Draft'}
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Link 
+                        to={`/blog/edit/${post.slug}`}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </Link>
+                      <Link 
+                        to={`/blog/${post.slug}`}
+                        className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                      >
+                        <BookOpenIcon className="h-5 w-5" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* View All Posts Button */}
+        <div className="flex justify-center mt-6">
+          <Link
+            to="/blog/manage"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          >
+            View All Posts
+            <ChevronRightIcon className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
   const StatCard = ({ icon: Icon, title, value, actions }) => (
     <div className="bg-[rgba(251,251,253,0.8)] dark:bg-black/80 backdrop-blur-[50px] rounded-lg shadow-sm border border-gray-200 dark:border-[#1d1d1f] overflow-hidden">
       <div className="p-4">
@@ -252,6 +445,7 @@ const Dashboard = () => {
     { name: 'Overview', key: 'overview', icon: DocumentDuplicateIcon },
     { name: 'CVs', key: 'cvs', icon: DocumentDuplicateIcon },
     { name: 'Jobs', key: 'jobs', icon: CreditCardIcon },
+    { name: 'Blog', key: 'blog', icon: BookOpenIcon },
     { name: 'Activity', key: 'activity', icon: ClockIcon },
     { name: 'Applications', key: 'applications', icon: ChevronRightIcon }
   ];
@@ -352,22 +546,23 @@ const Dashboard = () => {
               {/* Jobs Panel */}
               <Tab.Panel>
                 <div className="mt-6">
-                  {loading ? (
-                    <div className="text-center py-12 text-[#424245] dark:text-gray-300">Loading...</div>
-                  ) : jobs.length === 0 ? (
-                    <div className="text-center py-12 text-[#424245] dark:text-gray-300">
-                      No jobs found. Keep exploring!
-                    </div>
-                  ) : (
-                    <JobsList jobs={jobs} />
-                  )}
+                  <JobsList jobs={jobs} loading={loading} />
+                </div>
+              </Tab.Panel>
+
+              {/* Blog Panel */}
+              <Tab.Panel>
+                <div className="mt-6">
+                  <BlogManagementSection />
                 </div>
               </Tab.Panel>
 
               {/* Activity Panel */}
               <Tab.Panel>
                 <div className="mt-6">
-                  <RecentApplications />
+                  <div className="text-center py-12 text-[#424245] dark:text-gray-300">
+                    Activity tracking coming soon...
+                  </div>
                 </div>
               </Tab.Panel>
 
