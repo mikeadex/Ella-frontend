@@ -85,17 +85,33 @@ export const getImagePath = (url) => {
  * @returns {string} - The fixed image URL
  */
 export const getPostImageUrl = (post, defaultImage = '/images/placeholder-blog.svg') => {
-  if (!post) return defaultImage;
+  // Check various possible image properties
+  const imageUrl = 
+    post?.featured_image_url || 
+    post?.featured_image || 
+    post?.image || 
+    post?.thumbnail || 
+    post?.cover_image || 
+    '';
   
-  // Check all possible image properties in order of preference
-  const imageUrl = post.featured_image || 
-                   post.featured_image_url || 
-                   post.image ||
-                   post.image_url || 
-                   post.thumbnail ||
-                   post.thumbnail_url ||
-                   defaultImage;
-  
-  // Fix the URL for the current environment
-  return fixImageUrl(imageUrl);
+  if (!imageUrl) {
+    return 'https://placehold.co/600x400/e2e8f0/475569?text=No+Image+Available';
+  }
+
+  // Handle relative URLs by prepending the API base URL
+  if (imageUrl && imageUrl.startsWith('/')) {
+    // Determine environment
+    const baseUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8000' 
+      : 'http://www.ellacvwriter.com';
+    
+    return `${baseUrl}${imageUrl}`;
+  }
+
+  // Fix production URLs if in development environment
+  if (window.location.hostname === 'localhost' && imageUrl.includes('ellacvwriter.com')) {
+    return imageUrl.replace('http://www.ellacvwriter.com', 'http://localhost:8000');
+  }
+
+  return imageUrl;
 };

@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BlogImage = ({ src, alt, className, ...props }) => {
+const BlogImage = ({ 
+  src, 
+  alt = 'Blog image', 
+  className = '', 
+  ...props 
+}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [imageSrc, setImageSrc] = useState(src);
@@ -88,7 +93,7 @@ const BlogImage = ({ src, alt, className, ...props }) => {
           {/* Fallback to placeholder image */}
           <img 
             src={placeholderImg}
-            alt={alt || "Placeholder"} 
+            alt={alt} 
             className="hidden" // Load but don't display - helps prevent layout shifts
           />
         </div>
@@ -110,11 +115,6 @@ BlogImage.propTypes = {
   src: PropTypes.string.isRequired,
   alt: PropTypes.string,
   className: PropTypes.string,
-};
-
-BlogImage.defaultProps = {
-  alt: 'Blog image',
-  className: '',
 };
 
 export default BlogImage;
