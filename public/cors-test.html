@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-group {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        #headers-display {
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ella CV CORS Test Tool</h1>
+    <div class="test-group">
+        <h2>API Endpoint Tester</h2>
+        <label for="endpoint">API Endpoint URL:</label>
+        <input type="text" id="endpoint" value="https://ella-backend-gw8c.onrender.com/api/auth/login/" />
+        
+        <label for="method">HTTP Method:</label>
+        <select id="method">
+            <option value="OPTIONS">OPTIONS (Preflight)</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+        </select>
+        
+        <label for="credentials">Include Credentials:</label>
+        <select id="credentials">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </select>
+        
+        <label for="payload">Request Payload (JSON):</label>
+        <textarea id="payload" rows="5" style="width: 100%">{"email": "test@example.com", "password": "password123"}</textarea>
+
+        <div style="margin-top: 10px;">
+            <button id="test-request">Test Request</button>
+            <button id="clear-results">Clear Results</button>
+        </div>
+
+        <h3>Results:</h3>
+        <div id="results">
+            <p><strong>Status:</strong> <span id="status">Not tested yet</span></p>
+            <div id="headers-display">
+                <strong>Response Headers:</strong>
+                <pre id="headers"></pre>
+            </div>
+            <strong>Response Body:</strong>
+            <pre id="response"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('test-request').addEventListener('click', async () => {
+            const endpoint = document.getElementById('endpoint').value;
+            const method = document.getElementById('method').value;
+            const includeCredentials = document.getElementById('credentials').value === 'true';
+            const payload = document.getElementById('payload').value;
+            
+            // Update status
+            document.getElementById('status').textContent = 'Testing...';
+            document.getElementById('status').className = '';
+            document.getElementById('headers').textContent = '';
+            document.getElementById('response').textContent = '';
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: includeCredentials ? 'include' : 'omit'
+                };
+                
+                // Add payload for POST requests
+                if (method === 'POST') {
+                    try {
+                        options.body = payload;
+                    } catch (e) {
+                        document.getElementById('response').textContent = `Invalid JSON: ${e.message}`;
+                        return;
+                    }
+                }
+                
+                // First, let's check if we can make a preflight request
+                if (method !== 'OPTIONS') {
+                    try {
+                        const preflightOptions = {
+                            method: 'OPTIONS',
+                            headers: {
+                                'Origin': window.location.origin,
+                                'Access-Control-Request-Method': method,
+                                'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                            }
+                        };
+                        
+                        console.log('Sending preflight request:', preflightOptions);
+                        const preflightResponse = await fetch(endpoint, preflightOptions);
+                        
+                        // Display preflight headers
+                        let preflightHeaders = '';
+                        preflightResponse.headers.forEach((value, key) => {
+                            preflightHeaders += `${key}: ${value}\n`;
+                        });
+                        
+                        document.getElementById('headers').textContent = 
+                            `==== PREFLIGHT RESPONSE HEADERS ====\n${preflightHeaders}\n\n`;
+                            
+                        if (preflightResponse.ok) {
+                            console.log('Preflight successful, proceeding with actual request');
+                        } else {
+                            throw new Error(`Preflight failed with status: ${preflightResponse.status}`);
+                        }
+                    } catch (e) {
+                        document.getElementById('status').textContent = `Preflight Error: ${e.message}`;
+                        document.getElementById('status').className = 'error';
+                        return;
+                    }
+                }
+                
+                // Now make the actual request
+                console.log('Sending request:', options);
+                const response = await fetch(endpoint, options);
+                
+                // Display response headers
+                let headersText = '';
+                response.headers.forEach((value, key) => {
+                    headersText += `${key}: ${value}\n`;
+                });
+                
+                document.getElementById('headers').textContent += 
+                    `==== MAIN RESPONSE HEADERS ====\n${headersText}`;
+                
+                // Display status
+                document.getElementById('status').textContent = 
+                    `${response.status} ${response.statusText}`;
+                    
+                document.getElementById('status').className = 
+                    response.ok ? 'success' : 'error';
+                
+                // Display response
+                try {
+                    const data = await response.text();
+                    try {
+                        // Try to parse as JSON
+                        const jsonData = JSON.parse(data);
+                        document.getElementById('response').textContent = 
+                            JSON.stringify(jsonData, null, 2);
+                    } catch (e) {
+                        // Display as text if not JSON
+                        document.getElementById('response').textContent = data;
+                    }
+                } catch (e) {
+                    document.getElementById('response').textContent = 
+                        'Error reading response body';
+                }
+                
+            } catch (error) {
+                document.getElementById('status').textContent = `Error: ${error.message}`;
+                document.getElementById('status').className = 'error';
+                console.error('Request failed:', error);
+            }
+        });
+        
+        document.getElementById('clear-results').addEventListener('click', () => {
+            document.getElementById('status').textContent = 'Not tested yet';
+            document.getElementById('status').className = '';
+            document.getElementById('headers').textContent = '';
+            document.getElementById('response').textContent = '';
+        });
+    </script>
+</body>
+</html>
