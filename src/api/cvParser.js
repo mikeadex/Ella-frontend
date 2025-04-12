@@ -137,3 +137,75 @@ export const extractSections = async (text) => {
         throw error;
     }
 };
+
+// Fetch parsed CV data with enhanced error handling
+export const fetchParsedCV = async (cvId) => {
+    try {
+        if (!cvId) {
+            throw new Error('CV ID is required');
+        }
+
+        // Get the token from localStorage or sessionStorage
+        const token = localStorage.getItem(ACCESS_TOKEN) || sessionStorage.getItem(ACCESS_TOKEN);
+        
+        if (!token) {
+            console.error('Authentication token not found');
+            throw new Error('You must be logged in to view parsed CV data');
+        }
+        
+        // Using our api instance with proper authentication and error handling
+        const response = await api.get(
+            `/api/cv_parser/parser/${cvId}/`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                timeout: DEFAULT_TIMEOUT
+            }
+        );
+
+        // Validate response data
+        if (!response.data) {
+            throw new Error('No data received from server');
+        }
+
+        console.log('Fetched CV Parser Data:', response.data);
+        
+        // Handle undefined status field gracefully
+        if (response.data.status === undefined) {
+            console.warn('CV parser status is undefined, treating as completed');
+            // Create a defensive copy with a default status
+            return {
+                ...response.data,
+                status: 'completed'
+            };
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching parsed CV data:', error);
+        
+        // Handle specific error cases
+        if (error.code === 'ECONNABORTED') {
+            throw new Error('Request timed out while fetching CV data. Please try again later.');
+        }
+        
+        if (error.response?.status === 404) {
+            throw new Error('The requested CV was not found. It may have been deleted or the ID is incorrect.');
+        }
+        
+        if (error.response?.status === 401 || error.response?.status === 403) {
+            // Unauthorized access
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            throw new Error('You must be logged in to view this CV.');
+        }
+        
+        // Default error with useful context
+        const errorMessage = error.response?.data?.detail || 
+                            error.response?.data?.error || 
+                            error.message ||
+                            'Failed to fetch CV data. Please try again later.';
+        
+        throw new Error(errorMessage);
+    }
+};

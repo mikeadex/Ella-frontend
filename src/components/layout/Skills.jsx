@@ -53,7 +53,7 @@ const ProficiencyBar = styled.div`
 const ProficiencyLevel = styled.div`
   height: 100%;
   background-color: var(--accent-color);
-  width: ${props => props.level || '50'}%;
+  width: ${props => props.$level || '50'}%;
   transition: width 0.5s ease-in-out;
 `;
 
@@ -64,29 +64,36 @@ export const Skills = ({ skills = [] }) => {
       case 'intermediate': return 50;
       case 'advanced': return 75;
       case 'expert': return 100;
-      default: return 50;
+      default: return proficiency || 50;
     }
   };
 
   return (
     <SkillsGrid>
-      {skills.map((skill, index) => (
-        <SkillTag key={index}>
-          <SkillHeader>
-            <SkillName>{skill.name}</SkillName>
-            {skill.proficiency && (
-              <ProficiencyIndicator>
-                {skill.proficiency}
-              </ProficiencyIndicator>
-            )}
-          </SkillHeader>
-          <ProficiencyBar>
-            <ProficiencyLevel 
-              level={getProficiencyPercentage(skill.proficiency)} 
-            />
-          </ProficiencyBar>
-        </SkillTag>
-      ))}
+      {skills.map((skill, index) => {
+        // Get level from either proficiency or level property
+        const levelValue = typeof skill.level === 'number' 
+          ? skill.level 
+          : getProficiencyPercentage(skill.proficiency);
+        
+        return (
+          <SkillTag key={index}>
+            <SkillHeader>
+              <SkillName>{skill.name}</SkillName>
+              {(skill.proficiency || skill.levelDisplay) && (
+                <ProficiencyIndicator>
+                  {skill.levelDisplay || skill.proficiency}
+                </ProficiencyIndicator>
+              )}
+            </SkillHeader>
+            <ProficiencyBar>
+              <ProficiencyLevel 
+                $level={levelValue} 
+              />
+            </ProficiencyBar>
+          </SkillTag>
+        );
+      })}
     </SkillsGrid>
   );
 };

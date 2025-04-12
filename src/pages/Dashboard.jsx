@@ -130,7 +130,7 @@ const Dashboard = () => {
       {
         name: 'Create CV',
         icon: PlusIcon,
-        to: '/cv-writer/write',
+        to: '/cv-writer',
         description: 'Start a new CV from scratch',
         color: 'bg-indigo-50 hover:bg-indigo-100',
         textColor: 'text-indigo-600 hover:text-indigo-700'
@@ -401,7 +401,7 @@ const Dashboard = () => {
         <div className="flex justify-center mt-6">
           <Link
             to="/blog/manage"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
           >
             View All Posts
             <ChevronRightIcon className="ml-2 h-4 w-4" />
@@ -498,7 +498,7 @@ const Dashboard = () => {
                       {cvs.map((cv) => (
                         <Link 
                           key={cv.id} 
-                          to={`/cv-writer/edit/${cv.id}`}
+                          to={`/cv-writer/create/${cv.id}`}
                           className="bg-[rgba(251,251,253,0.8)] dark:bg-black/80 backdrop-blur-[50px] rounded-lg shadow-sm border border-gray-200 dark:border-[#1d1d1f] overflow-hidden"
                         >
                           <div className="p-4">
@@ -529,7 +529,7 @@ const Dashboard = () => {
                                 Preview
                               </Link>
                               <Link
-                                to={`/cv-writer/write/${cv.id}`}
+                                to={`/cv-writer/create/${cv.id}`}
                                 className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                               >
                                 Edit

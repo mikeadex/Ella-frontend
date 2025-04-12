@@ -4,6 +4,9 @@ import { API_BASE_URL } from '../config';
 class CVImprovementService {
     constructor() {
         this.baseUrl = `${API_BASE_URL}/api/ai_cv_parser`;
+        this.client = axios.create({
+            baseURL: this.baseUrl
+        });
     }
 
     // Improve summary specifically
@@ -104,11 +107,14 @@ class CVImprovementService {
                     description: exp.description || ''
                 })) : [],
                 skills: cvData.skills || '',
-                industry: 'technology' // Default industry
+                industry: 'technology', // Default industry
+                create_temporary: true // Flag to create temporary record first
             };
 
-            const response = await axios.post(
-                `${this.baseUrl}/rewrite/`,
+            // Phase 1: Create temporary CV session record
+            console.log('Creating temporary CV session...');
+            const sessionResponse = await axios.post(
+                `${this.baseUrl}/rewrite/create_session/`,
                 { data: formattedData },
                 {
                     headers: {
@@ -118,14 +124,35 @@ class CVImprovementService {
                 }
             );
 
-            if (!response.data) {
-                throw new Error('No data received from server');
+            if (!sessionResponse.data || !sessionResponse.data.session_id) {
+                throw new Error('Failed to create temporary session');
             }
 
-            return response.data;
+            const sessionId = sessionResponse.data.session_id;
+            console.log('Temporary session created with ID:', sessionId);
+
+            // Phase 2: Process with AI and update the session
+            console.log('Processing CV with AI...');
+            const processingResponse = await axios.post(
+                `${this.baseUrl}/rewrite/process/${sessionId}/`,
+                null,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    timeout: 120000 // 2 minute timeout for the AI processing
+                }
+            );
+
+            if (!processingResponse.data) {
+                throw new Error('No data received from server during processing');
+            }
+
+            return processingResponse.data;
         } catch (error) {
             console.error('Error rewriting CV:', error);
-            throw new Error(error.response?.data?.error || 'Failed to rewrite CV. Please try again.');
+            throw error;
         }
     }
 }

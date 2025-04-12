@@ -271,7 +271,7 @@ const AnimatedCards = () => {
         <div className="mt-20 text-center">
           <button
             ref={ctaRef}
-            onClick={() => window.location.href = '/cv-writer/write'}
+            onClick={() => window.location.href = '/cv-writer'}
             className="relative inline-flex items-center px-10 py-5 text-xl font-bold text-indigo-600 bg-white rounded-xl transition-all duration-300 hover:text-indigo-700 border border-indigo-100"
             style={{
               boxShadow: '0 4px 20px rgba(79, 70, 229, 0.15)',

@@ -1,12 +1,15 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CVFormProvider } from './context/CVFormContext';
 import { HelmetProvider } from 'react-helmet-async';
-import RootErrorBoundary from './components/ErrorBoundary/RootErrorBoundary';
-import Navbar from './components/Navbar';
+import Navbar from './components/Navbar/Navbar';
+import Footer from './components/Footer/Footer';
 import ThemeSwitcher from './components/ThemeSwitcher';
+import RootErrorBoundary from './components/ErrorBoundary/RootErrorBoundary';
+import RouteTransition from './components/PageTransition/RouteTransition';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -23,7 +26,6 @@ import LinkedInCallback from './pages/LinkedInCallback';
 import ResetPassword from './pages/ResetPassword';
 import ResetPasswordConfirm from './pages/ResetPasswordConfirm';
 import Logout from './pages/Logout';
-import ProtectedRoute from './components/ProtectedRoute';
 import CVWriter from './pages/cvWriter/write';
 import CVTemplates from './pages/CVTemplates';
 import TemplatePreview from './shared/pages/TemplatePreview';
@@ -43,12 +45,17 @@ import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 import Licenses from './pages/Licenses';
 import Sitemap from './pages/Sitemap';
-import RouteTransition from './components/PageTransition/RouteTransition';
 import Applications from './pages/Applications'; // Import Applications page
 import CVVersionManager from './components/CVVersionManager'; // Import CVVersionManager
 import AICVParserPage from './pages/AICVParserPage';
 import CVRewriter from './components/CVRewriter';
+import TemplatePreviewPage from './pages/TemplatePreviewPage'; // Import the new template preview page
+import CVParserPreview from './pages/cvWriter/CVParserPreview'; // Import the new CVParserPreview component
 import { Toaster } from 'react-hot-toast';
+
+// Import new CV Creation Option components
+import CVCreationOptions from './pages/cvWriter/CVCreationOptions';
+import CVUpload from './pages/cvWriter/CVUpload';
 
 // Import global styles
 import './styles/index.css';
@@ -77,8 +84,13 @@ function AppRoutes() {
             <Routes>
               {/* Public routes (no authentication required) */}
               <Route path="/" element={<Home />} />
-              <Route path="/cv-writer" element={<Navigate to="/cv-writer/write" />} />
-              <Route path="/cv-writer/write" element={<CVWriter />} />
+              <Route path="/cv-writer" element={<CVCreationOptions />} />
+              <Route path="/cv-writer/create" element={<CVWriter />} />
+              <Route path="/cv-writer/upload" element={
+                <ProtectedRoute>
+                  <CVUpload />
+                </ProtectedRoute>
+              } />
               <Route path="/cv-writer/preview/:id" element={<CVPreviewPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -102,6 +114,7 @@ function AppRoutes() {
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/licenses" element={<Licenses />} />
               <Route path="/sitemap" element={<Sitemap />} />
+              <Route path="/cv-templates-preview" element={<TemplatePreviewPage />} />
 
               {/* Protected routes (require authentication) */}
               <Route
@@ -218,6 +231,14 @@ function AppRoutes() {
               />
               <Route path="/cv/versions" element={<CVVersionManager />} />
               <Route path="/cv-rewriter" element={<CVRewriter />} />
+              <Route
+                path="/cv-parser-preview/:id"
+                element={
+                  <ProtectedRoute>
+                    <CVParserPreview />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </RouteTransition>
         </div>

@@ -5,7 +5,7 @@ import { ArrowUpTrayIcon, DocumentTextIcon, CpuChipIcon, ChartBarIcon, BeakerIco
 import { useAuth } from '../../context/AuthContext';
 import cvImprovementService from '../../services/cvImprovement';
 
-const LoadingStep = ({ step, currentStep, text }) => (
+const LoadingStep = ({ step, currentStep, text, icon: Icon }) => (
     <div className={`flex items-center space-x-2 transition-all duration-500 ${currentStep === step ? 'text-purple-600 scale-105' : 'text-gray-400'}`}>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
             ${currentStep === step ? 'border-purple-500 bg-purple-50' : 'border-gray-300'}`}>
@@ -19,6 +19,7 @@ const LoadingStep = ({ step, currentStep, text }) => (
                 </span>
             )}
         </div>
+        <Icon className="w-5 h-5" />
         <span className={`text-sm font-medium ${currentStep === step ? 'text-purple-600' : 'text-gray-500'}`}>
             {text}
         </span>
@@ -61,6 +62,8 @@ const AICVUpload = ({ onUploadComplete }) => {
     const [loadingText, setLoadingText] = useState('');
     const [rewriteLoading, setRewriteLoading] = useState(false);
     const [rewriteStep, setRewriteStep] = useState(0);
+    const [rewriteSuccess, setRewriteSuccess] = useState(false);
+    const [rewriteResult, setRewriteResult] = useState(null);
 
     const loadingSteps = [
         { text: 'Extracting text from document', icon: DocumentTextIcon },
@@ -216,16 +219,25 @@ const AICVUpload = ({ onUploadComplete }) => {
                 // Show success message before navigation
                 setUploadSuccess(false); // Hide current success state
                 
-                // Navigate to CV preview with improvements
-                navigate(`/cv-writer/preview/${result.new_cv_id}`, {
-                    state: { 
-                        message: 'Your CV has been rewritten and improved!',
-                        improvements: {
-                            original: parsedResult.data,
-                            rewritten: result.rewritten
+                // Validate that we have a valid CV ID before navigating
+                if (result.new_cv_id) {
+                    // Navigate to CV preview with improvements
+                    navigate(`/cv-writer/preview/${result.new_cv_id}`, {
+                        state: { 
+                            message: 'Your CV has been rewritten and improved!',
+                            improvements: {
+                                original: parsedResult.data,
+                                rewritten: result.rewritten
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    // Handle the case where new_cv_id is null or undefined
+                    console.warn('No CV ID returned from server. Showing improvements without navigation.');
+                    setRewriteSuccess(true);
+                    setRewriteResult(result.rewritten);
+                    setError(null);
+                }
             } else if (result && result.error) {
                 throw new Error(result.error);
             } else {
@@ -265,144 +277,163 @@ const AICVUpload = ({ onUploadComplete }) => {
     };
 
     return (
-        <div className="p-6">
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">AI CV Parser</h2>
+            <p className="text-gray-600 mb-6">
+                Upload your CV to analyze its content and structure. Our AI will parse the information and help you improve it.
+            </p>
+
             {error && (
-                <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                    {error}
+                <div className="text-center">
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+                        <p>{error}</p>
+                    </div>
+                    <ActionButton 
+                        icon={ArrowUpTrayIcon}
+                        text="Try Again"
+                        onClick={() => setError(null)}
+                        primary
+                    />
                 </div>
             )}
 
-            <div className="flex flex-col items-center gap-8">
-                {!loading && !uploadSuccess && (
-                    <label 
-                        className="aspect-square w-full max-w-[280px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all duration-300"
-                    >
-                        <ArrowUpTrayIcon className="w-10 h-10 text-gray-400 mb-3" />
-                        <span className="text-gray-600 text-center px-4">
-                            {file ? file.name : 'Drop your CV here or click to browse'}
-                        </span>
-                        <span className="text-sm text-gray-400 mt-2">PDF or DOCX (Max 10MB)</span>
-                        <input
-                            type="file"
-                            onChange={handleFileChange}
-                            accept=".pdf,.docx"
-                            className="hidden"
-                            disabled={loading}
+            {loading ? (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-center space-x-6">
+                        {loadingSteps.map((step, index) => (
+                            <LoadingStep 
+                                key={index} 
+                                step={index} 
+                                currentStep={currentStep} 
+                                text={step.text}
+                                icon={step.icon}
+                            />
+                        ))}
+                    </div>
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div 
+                            className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                            style={{width: `${progress}%`}}
+                        ></div>
+                    </div>
+                    <p className="text-center text-gray-600">{loadingText || 'Processing your document...'}</p>
+                </div>
+            ) : uploadSuccess ? (
+                <div className="space-y-6">
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+                        <p className="font-medium">Success! We've parsed your CV.</p>
+                        <p className="text-sm mt-1">What would you like to do next?</p>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-4">
+                        <ActionButton 
+                            icon={ChartBarIcon}
+                            text="Review Your CV"
+                            onClick={handleReviewCV}
+                            primary
                         />
-                    </label>
-                )}
-
-                {loading && (
-                    <div className="w-full max-w-[280px] bg-white rounded-xl p-6 shadow-lg border border-purple-100 animate-fadeIn">
-                        <div className="space-y-4">
-                            {loadingSteps.map((step, index) => (
-                                <LoadingStep 
-                                    key={index}
-                                    step={index}
-                                    currentStep={currentStep}
-                                    text={step.text}
-                                />
-                            ))}
-                        </div>
-                        
-                        <div className="mt-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700">Processing Progress</span>
-                                <span className="text-sm font-medium text-purple-600">{Math.round(progress)}%</span>
+                        <ActionButton
+                            icon={PencilSquareIcon}
+                            text="Improve Your CV"
+                            onClick={handleRewriteCV}
+                            loading={rewriteLoading}
+                            disabled={rewriteLoading}
+                        />
+                    </div>
+                    
+                    {rewriteLoading && (
+                        <div className="mt-4 p-4 border border-blue-100 bg-blue-50 rounded-lg">
+                            <div className="flex items-center space-x-3 mb-2">
+                                <CpuChipIcon className="h-5 w-5 text-blue-500" />
+                                <p className="font-medium text-blue-700">AI is improving your CV</p>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                                 <div 
-                                    className="bg-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
-                                    style={{ width: `${progress}%` }}
+                                    className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                                    style={{width: `${(rewriteStep / 3) * 100}%`}}
                                 ></div>
                             </div>
-                            <p className="mt-3 text-sm text-gray-500 text-center animate-pulse">
-                                {loadingText}
+                            <p className="text-sm text-blue-600 mt-2">
+                                {rewriteStep === 0 && "Analyzing your professional summary..."}
+                                {rewriteStep === 1 && "Enhancing your work experience..."}
+                                {rewriteStep === 2 && "Optimizing your skills..."}
+                                {rewriteStep === 3 && "Generating improved CV..."}
                             </p>
                         </div>
+                    )}
+                </div>
+            ) : rewriteSuccess ? (
+                <div className="space-y-6">
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6">
+                        <p className="font-medium">Success! We've improved your CV.</p>
+                        <p className="text-sm mt-1">Here are the improvements we made:</p>
                     </div>
-                )}
-
-                {rewriteLoading && (
-                    <div className="w-full max-w-[280px] bg-white rounded-xl p-6 shadow-lg border border-purple-100 animate-fadeIn">
-                        <div className="space-y-4">
-                            {rewriteSteps.map((step, index) => (
-                                <LoadingStep 
-                                    key={index}
-                                    step={index}
-                                    currentStep={rewriteStep}
-                                    text={step.text}
-                                />
-                            ))}
+                    
+                    {rewriteResult && (
+                        <div className="space-y-6">
+                            {rewriteResult.professional_summary && (
+                                <div className="p-4 border border-gray-200 rounded-lg">
+                                    <h3 className="font-bold text-gray-800 mb-2">Improved Professional Summary</h3>
+                                    <p className="text-gray-700 whitespace-pre-line">{rewriteResult.professional_summary}</p>
+                                </div>
+                            )}
+                            
+                            {rewriteResult.experience && rewriteResult.experience.length > 0 && (
+                                <div className="p-4 border border-gray-200 rounded-lg">
+                                    <h3 className="font-bold text-gray-800 mb-3">Improved Experience</h3>
+                                    <div className="space-y-4">
+                                        {rewriteResult.experience.map((exp, index) => (
+                                            <div key={index} className="border-l-4 border-blue-500 pl-3 py-1">
+                                                <p className="font-medium">{exp.job_title} at {exp.company_name}</p>
+                                                <p className="text-gray-700 whitespace-pre-line">{exp.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {rewriteResult.skills && (
+                                <div className="p-4 border border-gray-200 rounded-lg">
+                                    <h3 className="font-bold text-gray-800 mb-2">Improved Skills</h3>
+                                    <p className="text-gray-700 whitespace-pre-line">{rewriteResult.skills}</p>
+                                </div>
+                            )}
                         </div>
-                        
-                        <div className="mt-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700">Improvement Progress</span>
-                                <span className="text-sm font-medium text-purple-600">{Math.round(progress)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                <div 
-                                    className="bg-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
-                                    style={{ width: `${progress}%` }}
-                                ></div>
-                            </div>
-                            <p className="mt-3 text-sm text-gray-500 text-center animate-pulse">
-                                {loadingText}
-                            </p>
-                        </div>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-4">
+                        <ActionButton 
+                            icon={ArrowUpTrayIcon}
+                            text="Upload New CV"
+                            onClick={() => {
+                                setUploadSuccess(false);
+                                setRewriteSuccess(false);
+                                setRewriteResult(null);
+                                setFile(null);
+                                setParsedResult(null);
+                            }}
+                            primary
+                        />
                     </div>
-                )}
-
-                {uploadSuccess && !rewriteLoading ? (
-                    <div className="w-full max-w-[280px] animate-fadeIn">
-                        <div className="bg-green-50 rounded-xl p-6 mb-6 text-center">
-                            <CheckCircleIcon className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                            <h3 className="text-lg font-semibold text-green-700 mb-2">
-                                CV Successfully Processed!
-                            </h3>
-                            <p className="text-sm text-green-600">
-                                Your CV has been analyzed. Choose your next step:
-                            </p>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <ActionButton
-                                icon={DocumentMagnifyingGlassIcon}
-                                text="Review My CV"
-                                onClick={handleReviewCV}
-                                primary
-                                disabled={rewriteLoading}
-                            />
-                            <ActionButton
-                                icon={PencilSquareIcon}
-                                text="Rewrite My CV"
-                                onClick={handleRewriteCV}
-                                loading={rewriteLoading}
-                                disabled={rewriteLoading}
-                            />
-                            <ActionButton
-                                icon={ChartBarIcon}
-                                text="Check ATS Compatibility"
-                                onClick={handleATSCheck}
-                                disabled={rewriteLoading}
-                            />
-                        </div>
-                    </div>
-                ) : !loading && !rewriteLoading && (
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || loading}
-                        className={`px-12 py-4 rounded-xl font-semibold text-white transition-all duration-300 text-lg
-                            ${!file || loading
-                                ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg'
-                            } w-full max-w-[280px]`}
-                    >
-                        {loading ? 'Processing...' : 'Get Started'}
-                    </button>
-                )}
-            </div>
+                </div>
+            ) : (
+                <label 
+                    className="aspect-square w-full max-w-[280px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all duration-300"
+                >
+                    <ArrowUpTrayIcon className="w-10 h-10 text-gray-400 mb-3" />
+                    <span className="text-gray-600 text-center px-4">
+                        {file ? file.name : 'Drop your CV here or click to browse'}
+                    </span>
+                    <span className="text-sm text-gray-400 mt-2">PDF or DOCX (Max 10MB)</span>
+                    <input
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".pdf,.docx"
+                        className="hidden"
+                        disabled={loading}
+                    />
+                </label>
+            )}
         </div>
     );
 };

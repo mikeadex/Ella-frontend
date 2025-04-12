@@ -99,7 +99,7 @@ const Templates = () => {
                     {template.description}
                   </p>
                   <Link
-                    to="/cv-writer/write"
+                    to="/cv-writer"
                     className="mt-4 inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                   >
                     Use this template
@@ -122,7 +122,7 @@ const Templates = () => {
             Choose a template and start building your CV in minutes
           </p>
           <Link
-            to="/cv-writer/write"
+            to="/cv-writer"
             className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-medium text-lg transition-all duration-300 transform hover:shadow-lg"
           >
             Get Started

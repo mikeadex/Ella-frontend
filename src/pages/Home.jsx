@@ -315,7 +315,7 @@ function Home() {
                   transition={{ delay: 0.4, duration: 0.8 }}
                 >
                   <Link 
-                    to="/cv-writer/write" 
+                    to="/cv-writer" 
                     className="group inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat opacity-10" />
@@ -429,7 +429,7 @@ function Home() {
                   className="inline-block"
                 >
                   <Link 
-                    to="/cv-writer/write" 
+                    to="/cv-writer" 
                     className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Start Building Now
@@ -666,7 +666,7 @@ function Home() {
               whileTap={{ scale: 0.95 }}
             >
               <Link 
-                to="/cv-writer/write" 
+                to="/cv-writer" 
                 className="inline-flex items-center px-10 py-5 text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Build Your Standout CV

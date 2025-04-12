@@ -52,7 +52,7 @@ const ParsedCV = ({ data }) => {
             console.log('Transfer successful:', result);
             
             // Navigate to the CV Writer page with the new CV ID
-            navigate(`/cv-writer/write/${result.cv_id}`);
+            navigate(`/cv-writer/create/${result.cv_id}`);
         } catch (error) {
             console.error('Transfer failed:', error);
             setTransferError(error.message || 'Failed to transfer data to CV Writer');

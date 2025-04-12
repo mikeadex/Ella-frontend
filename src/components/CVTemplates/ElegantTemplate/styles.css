@@ -1,0 +1,364 @@
+/* Elegant Template Styles */
+.elegant-template {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  background-color: #fcfcfc;
+  position: relative;
+  width: 100%;
+}
+
+/* Web Optimization */
+@media screen {
+  .elegant-template {
+    max-width: 900px;
+    margin: 20px auto;
+    min-height: auto;
+  }
+}
+
+/* Print Optimization */
+@media print {
+  .elegant-template {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+}
+
+/* Header Section */
+.elegant-header {
+  padding: 40px;
+  background: #f0f2f5;
+  color: #2c3e50;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 3px solid #e3e7eb;
+}
+
+.elegant-name-title h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  letter-spacing: -0.5px;
+}
+
+.elegant-name-title h2 {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #5d6d7e;
+  margin: 0;
+}
+
+.elegant-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.elegant-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #5d6d7e;
+}
+
+.elegant-contact-icon {
+  font-size: 1.1rem;
+  color: #3498db;
+}
+
+/* Body Layout */
+.elegant-body {
+  display: flex;
+  background: #fff;
+}
+
+.elegant-main {
+  flex: 3;
+  padding: 40px;
+  border-right: 1px solid #e3e7eb;
+}
+
+.elegant-sidebar {
+  flex: 1.5;
+  padding: 40px 30px;
+  background: #f9fafb;
+}
+
+/* Section Styling */
+.elegant-section {
+  margin-bottom: 35px;
+}
+
+.elegant-section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e3e7eb;
+  position: relative;
+}
+
+.elegant-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 70px;
+  height: 2px;
+  background: #3498db;
+}
+
+/* Summary Section */
+.elegant-summary {
+  margin-bottom: 35px;
+}
+
+.elegant-summary p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #5d6d7e;
+  margin: 0;
+}
+
+/* Experience Section */
+.elegant-experience-item {
+  margin-bottom: 25px;
+}
+
+.elegant-experience-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.elegant-experience-company {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.elegant-company {
+  font-weight: 500;
+  color: #3498db;
+}
+
+.elegant-dates {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.elegant-description {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #5d6d7e;
+  margin: 0;
+}
+
+/* Education Section */
+.elegant-education-item {
+  margin-bottom: 25px;
+}
+
+.elegant-education-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+}
+
+.elegant-school-dates {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.elegant-school {
+  font-weight: 500;
+  color: #3498db;
+}
+
+/* Skills Section */
+.elegant-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.elegant-skill {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.elegant-skill-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #34495e;
+}
+
+.elegant-skill-level {
+  display: flex;
+  gap: 5px;
+}
+
+.elegant-skill-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ecf0f1;
+  border: 1px solid #bdc3c7;
+}
+
+.elegant-skill-dot.filled {
+  background-color: #3498db;
+  border-color: #2980b9;
+}
+
+/* Languages Section */
+.elegant-languages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.elegant-language-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.elegant-language-name {
+  font-weight: 500;
+  color: #34495e;
+}
+
+.elegant-language-level {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+/* Certifications Section */
+.elegant-certifications {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.elegant-certification-item {
+  margin-bottom: 15px;
+}
+
+.elegant-certification-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 3px 0;
+  color: #34495e;
+}
+
+.elegant-certification-issuer {
+  font-size: 0.9rem;
+  color: #3498db;
+  margin-bottom: 2px;
+}
+
+.elegant-certification-date {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+/* Projects Section */
+.elegant-project-item {
+  margin-bottom: 20px;
+}
+
+.elegant-project-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+}
+
+.elegant-project-description {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #5d6d7e;
+  margin: 0;
+}
+
+/* Interests Section */
+.elegant-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.elegant-interest-item {
+  font-size: 0.9rem;
+  color: #34495e;
+  background-color: #ecf0f1;
+  padding: 4px 10px;
+  border-radius: 30px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 900px) {
+  .elegant-header {
+    padding: 30px;
+  }
+  
+  .elegant-main, .elegant-sidebar {
+    padding: 30px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .elegant-header {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  
+  .elegant-body {
+    flex-direction: column;
+  }
+  
+  .elegant-main {
+    border-right: none;
+    border-bottom: 1px solid #e3e7eb;
+  }
+  
+  .elegant-experience-company, .elegant-school-dates {
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-start;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .elegant-header {
+    padding: 20px;
+  }
+  
+  .elegant-main, .elegant-sidebar {
+    padding: 20px;
+  }
+  
+  .elegant-name-title h1 {
+    font-size: 2rem;
+  }
+  
+  .elegant-section-title {
+    font-size: 1.2rem;
+  }
+}
