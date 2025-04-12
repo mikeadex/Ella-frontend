@@ -4,16 +4,28 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Create a custom axios instance with special handling for auth endpoints
+const createAuthApi = () => {
+  return axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    withCredentials: true, // Always include credentials for auth requests
+    timeout: 30000,
+  });
+};
+
+// Create a standard API instance
 const api = axios.create({
     baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
-    // Enable sending cookies and credentials with requests
-    withCredentials: true,
-    // Increase timeout for slower connections
+    withCredentials: true, // Include credentials
     timeout: 30000,
 })
+
 console.log('Base URL:', BASE_URL);
 
 // Add a request interceptor to check if access token exists in local storage
@@ -29,6 +41,25 @@ api.interceptors.request.use(
         return Promise.reject(error);
     }
 )
+
+// Special function for auth-related requests to avoid token interference
+api.authRequest = async (method, endpoint, data = {}) => {
+  const authApi = createAuthApi();
+  
+  try {
+    // Don't automatically include auth headers for these endpoints
+    const response = await authApi({
+      method,
+      url: endpoint,
+      data,
+    });
+    
+    return response;
+  } catch (error) {
+    console.error(`Auth request failed (${method} ${endpoint}):`, error);
+    throw error;
+  }
+};
 
 // Refresh token logic
 api.refreshToken = async () => {

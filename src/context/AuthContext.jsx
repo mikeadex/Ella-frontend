@@ -20,7 +20,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem(ACCESS_TOKEN);
       localStorage.removeItem(REFRESH_TOKEN);
       
-      const response = await api.post('/api/auth/login/', { 
+      // Use the specialized auth request method instead of standard API call
+      const response = await api.authRequest('post', '/api/auth/login/', { 
         email, 
         password,
         remember_me: rememberMe
