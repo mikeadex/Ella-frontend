@@ -29,17 +29,49 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Login response:', response);
       
-      const { refresh, access, user: userData } = response.data;
+      // Improved error handling - inspect token structure
+      if (!response.data) {
+        console.error('No data received in login response');
+        throw new Error('Invalid response from server');
+      }
       
-      if (!access || !refresh) {
+      // Log the response structure to help debug
+      console.log('Authentication data structure:', Object.keys(response.data));
+      
+      // Get token data - handle both formats the backend might return
+      let access, refresh, userData;
+      
+      if (response.data.key) {
+        // DRF auth token format
+        access = response.data.key;
+        refresh = response.data.key; // Same token for refresh in this format
+        userData = response.data.user || { email }; // Use available user data or fallback
+      } else if (response.data.access && response.data.refresh) {
+        // JWT token format
+        access = response.data.access;
+        refresh = response.data.refresh;
+        userData = response.data.user || { email }; // Use available user data or fallback
+      } else if (response.data.token) {
+        // Simple token format
+        access = response.data.token;
+        refresh = response.data.token;
+        userData = response.data.user || { email }; // Use available user data or fallback
+      } else {
+        console.error('Unrecognized authentication response format:', response.data);
+        throw new Error('Could not find authentication tokens in response');
+      }
+      
+      if (!access) {
         throw new Error('Authentication tokens not received from server');
       }
       
       // Store tokens
+      console.log('Storing tokens in localStorage');
       localStorage.setItem(ACCESS_TOKEN, access);
-      localStorage.setItem(REFRESH_TOKEN, refresh);
+      if (refresh) localStorage.setItem(REFRESH_TOKEN, refresh);
       
       // Set token in API headers for subsequent requests
+      console.log('Setting Authorization header for future requests');
       api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
       
       setUser(userData);
