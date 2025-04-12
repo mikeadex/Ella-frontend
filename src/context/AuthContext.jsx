@@ -14,17 +14,32 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, rememberMe = false) => {
     try {
+      console.log('Attempting login to:', `${api.defaults.baseURL}/api/auth/login/`);
+      
+      // First clear any existing tokens to prevent conflicts
+      localStorage.removeItem(ACCESS_TOKEN);
+      localStorage.removeItem(REFRESH_TOKEN);
+      
       const response = await api.post('/api/auth/login/', { 
         email, 
         password,
         remember_me: rememberMe
       });
       
+      console.log('Login response:', response);
+      
       const { refresh, access, user: userData } = response.data;
+      
+      if (!access || !refresh) {
+        throw new Error('Authentication tokens not received from server');
+      }
       
       // Store tokens
       localStorage.setItem(ACCESS_TOKEN, access);
       localStorage.setItem(REFRESH_TOKEN, refresh);
+      
+      // Set token in API headers for subsequent requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
       
       setUser(userData);
       
@@ -34,7 +49,32 @@ export const AuthProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      console.error('Login error details:', error.response?.data || 'No response data');
+      
+      // More descriptive error messages based on the error
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (error.response.status === 401) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.response.status === 403) {
+          errorMessage = 'Your account is inactive or blocked. Please contact support.';
+        } else if (error.response.status === 429) {
+          errorMessage = 'Too many login attempts. Please try again later.';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'Server not responding. Please check your internet connection and try again.';
+      }
+      
+      // Throw a more specific error
+      const enhancedError = new Error(errorMessage);
+      enhancedError.originalError = error;
+      throw enhancedError;
     }
   };
 

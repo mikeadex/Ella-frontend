@@ -9,6 +9,10 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    // Enable sending cookies and credentials with requests
+    withCredentials: true,
+    // Increase timeout for slower connections
+    timeout: 30000,
 })
 console.log('Base URL:', BASE_URL);
 
