@@ -6,7 +6,10 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 // Default timeout in milliseconds (30 seconds)
 const DEFAULT_TIMEOUT = 30000;
 
-// Upload document to the server
+// Maximum number of polling attempts
+const MAX_POLL_ATTEMPTS = 60; // Poll for up to 5 minutes (with 5s intervals)
+
+// Upload document to the server with async processing
 export const uploadDocument = async (file) => {
     try {
         const formData = new FormData();
@@ -20,38 +23,98 @@ export const uploadDocument = async (file) => {
             throw new Error('You must be logged in to upload documents');
         }
 
-        // Using our api instance with proper authentication and error handling
-        const response = await api.post(
-            `/api/cv_parser/parse-document/`,
+        // Phase 1: Upload document and start processing
+        console.log('Starting CV upload and processing...');
+        const uploadResponse = await api.uploadFile(
+            `/api/cv_parser/parse-cv/`,
             formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`
-                },
-                timeout: DEFAULT_TIMEOUT * 2 // Longer timeout for file uploads (60 seconds)
+            (progress) => {
+                console.log(`Upload progress: ${progress}%`);
+                // You can use this callback to update UI with upload progress
             }
         );
 
-        console.log('CV Parser Response:', response.data);
-        return {
-            data: response.data,
-            metadata: response.data.metadata || {}
-        };
+        // Check if we got a processing ID
+        if (!uploadResponse.data || !uploadResponse.data.id) {
+            console.error('Invalid response from server:', uploadResponse.data);
+            throw new Error('Server returned an invalid response');
+        }
+
+        const parsedCvId = uploadResponse.data.id;
+        console.log(`CV processing started with ID: ${parsedCvId}`);
+
+        // Phase 2: Poll for job completion
+        return await pollForCompletion(parsedCvId);
     } catch (error) {
         console.error('Error uploading document:', error);
         
         // Handle specific error types
         if (error.code === 'ECONNABORTED') {
-            throw new Error('The parsing process is taking too long. Please try again with a smaller file or try later.');
+            throw new Error('The request timed out. Please try again with a smaller file or try later.');
         }
         
         // If unauthorized, redirect to login
         if (error.response?.status === 401) {
             window.location.href = '/login';
+            throw new Error('You must be logged in to upload documents');
         }
         
         throw error;
+    }
+};
+
+// Poll for job completion
+const pollForCompletion = async (cvId, attempt = 0) => {
+    if (attempt >= MAX_POLL_ATTEMPTS) {
+        throw new Error('CV processing is taking longer than expected. Please check back later.');
+    }
+    
+    try {
+        // Wait 5 seconds between polls to avoid overloading the server
+        if (attempt > 0) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+        
+        // Get current status
+        const response = await api.get(`/api/cv_parser/parser/${cvId}/`);
+        
+        if (!response.data) {
+            throw new Error('Failed to retrieve processing status');
+        }
+        
+        const status = response.data.status;
+        console.log(`CV Processing status: ${status} (attempt ${attempt + 1}/${MAX_POLL_ATTEMPTS})`);
+        
+        // If completed, return the data
+        if (status === 'completed') {
+            console.log('CV processing completed successfully');
+            return {
+                data: response.data.parsed_data || {},
+                metadata: response.data.metadata || {
+                    processing_time: response.data.processing_time,
+                    uploaded_at: response.data.uploaded_at,
+                    processed_at: response.data.processed_at
+                }
+            };
+        } 
+        // If failed, throw an error
+        else if (status === 'failed') {
+            throw new Error(response.data.error_message || 'CV processing failed');
+        }
+        // If still processing, continue polling
+        else {
+            return await pollForCompletion(cvId, attempt + 1);
+        }
+    } catch (error) {
+        console.error(`Error polling for CV completion (attempt ${attempt + 1}):`, error);
+        
+        // Only throw after several failed polling attempts
+        if (attempt > 3) {
+            throw error;
+        }
+        
+        // Otherwise, try again
+        return await pollForCompletion(cvId, attempt + 1);
     }
 };
 
