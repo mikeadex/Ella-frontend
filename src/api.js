@@ -1,6 +1,7 @@
 // api.js
 import axios from "axios";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
+import createEnhancedApi from './utils/apiEnhancer';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -24,7 +25,7 @@ const api = axios.create({
     },
     withCredentials: true, // Include credentials
     timeout: 30000,
-})
+});
 
 console.log('Base URL:', BASE_URL);
 
@@ -40,7 +41,10 @@ api.interceptors.request.use(
     (error) => {
         return Promise.reject(error);
     }
-)
+);
+
+// Create an enhanced version of the API with resilience features
+const enhancedApi = createEnhancedApi(api);
 
 // Special function for auth-related requests to avoid token interference
 api.authRequest = async (method, endpoint, data = {}) => {
@@ -124,6 +128,37 @@ api.interceptors.response.use(
         }
     }
 );
+
+// Add enhanced API methods to the base API
+api.resilient = enhancedApi;
+
+// Add file upload with retry logic
+api.uploadFile = async (url, file, additionalData = {}, onProgress = null) => {
+  return enhancedApi.uploadFile(url, file, onProgress, additionalData, {
+    maxRetries: 3,
+    retryDelay: 2000
+  });
+};
+
+// Add a specific method for CV parsing that's more resilient
+api.parseCV = async (file, additionalData = {}, onProgress = null) => {
+  try {
+    console.log('Starting resilient CV parsing upload with retries');
+    
+    return await api.uploadFile('/api/cv_parser/parse-cv/', file, additionalData, onProgress);
+  } catch (error) {
+    console.error('CV parsing failed after multiple retries:', error);
+    
+    // Provide a user-friendly error message
+    const enhancedError = new Error(
+      'We\'re having trouble processing your CV right now. ' +
+      'Our servers are experiencing high demand. ' +
+      'Please try again in a few moments.'
+    );
+    enhancedError.originalError = error;
+    throw enhancedError;
+  }
+};
 
 export default api;
 // default api will be used to make requests to the backend instead of calling axios directly and all the requests will have the access token in the header.

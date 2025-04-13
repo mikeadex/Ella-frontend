@@ -575,122 +575,65 @@ function CVUpload() {
     setIsLoading(true);
     setUploadProgress(0);
     
-    // Start the first stage - File Upload
-    updateStage(1);
-
     try {
-      const formData = new FormData();
-      formData.append('cv_file', selectedFile);
-
-      // Stage 1: File Upload (0-25%)
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      setUploading(true);
+      setUploadProgress(0);
+      setUploadError(null);
       
-      const response = await axiosInstance.post('/api/cv_parser/parse-cv/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
-        timeout: 180000, // 3 minutes timeout for large files
-        onUploadProgress: (progressEvent) => {
-          // Calculate progress for upload stage (0-25%)
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 25) / progressEvent.total
-          );
+      // Use our enhanced resilient API instead of direct axios
+      const response = await api.parseCV(
+        selectedFile, 
+        { cv_type: cvType, customization }, 
+        (percentCompleted) => {
           setUploadProgress(percentCompleted);
+          console.log(`Upload progress: ${percentCompleted}%`);
         }
-      });
-
-      // Mark Stage 1 as completed
-      updateStage(1, true);
+      );
       
-      // Stage 2: Document Processing (25-50%)
-      updateStage(2);
+      console.log('CV parsed successfully:', response.data);
       
-      // Simulate progress for document processing
-      const processingTime = 2000; // 2 seconds
-      const processingInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const next = prev + 1;
-          if (next >= 50) {
-            clearInterval(processingInterval);
-            // Start Stage 3
-            updateStage(2, true);
-            updateStage(3);
-            return 50;
-          }
-          return next;
-        });
-      }, processingTime / 25);
-      
-      // Stage 3: AI Analysis (50-85%)
-      setTimeout(() => {
-        const analysisTime = 5000; // 5 seconds
-        const analysisInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            const next = prev + 1;
-            if (next >= 85) {
-              clearInterval(analysisInterval);
-              // Start Stage 4
-              updateStage(3, true);
-              updateStage(4);
-              return 85;
-            }
-            return next;
-          });
-        }, analysisTime / 35);
-      }, processingTime + 500);
-      
-      // Stage 4: Final Processing (85-100%)
-      setTimeout(() => {
-        const finalTime = 2000; // 2 seconds
-        const finalInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            const next = prev + 1;
-            if (next >= 100) {
-              clearInterval(finalInterval);
-              updateStage(4, true);
-              
-              // Navigate to the CV parser preview page after a brief pause
-              setTimeout(() => {
-                const cvId = response.data.cv_id;
-                navigate(`/cv-parser-preview/${cvId}`);
-                toast.success('CV uploaded and parsed successfully!');
-              }, 500);
-              
-              return 100;
-            }
-            return next;
-          });
-        }, finalTime / 15);
-      }, processingTime + 5500);
-      
+      // Set the parsed CV data
+      setParsedData(response.data);
+      setCurrentStep(2);
     } catch (error) {
       console.error('Error uploading CV:', error);
-
-      let errorMessage = 'Failed to upload CV. Please try again.';
-
-      if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('timeout'))) {
-        errorMessage = 'The CV parsing is taking longer than expected. The file might be too complex or our servers are busy. Please try again with a smaller file or try later.';
-      } else if (error.response) {
-        // Server returned an error response
-        if (error.response.status === 413) {
-          errorMessage = 'File size too large. Please upload a smaller file.';
-        } else if (error.response.status === 415) {
-          errorMessage = 'Unsupported file type. Please upload a PDF, DOCX, or TXT file.';
-        } else if (error.response.status === 500) {
-          errorMessage = 'Server encountered an error processing your CV. Our team has been notified. Please try again later.';
-        } else if (error.response.data && error.response.data.detail) {
-          errorMessage = error.response.data.detail;
-        } else if (error.response.data && error.response.data.error) {
-          errorMessage = error.response.data.error;
-        }
+      
+      // Show user-friendly error message
+      const errorMessage = error.userMessage || 
+                            'There was an error uploading your CV. Please try again.';
+                            
+      // Check for network or server-specific issues
+      if (error.originalError?.code === 'ERR_NETWORK' || 
+          error.originalError?.response?.status === 502) {
+        setUploadError({
+          title: 'Server Connection Issue',
+          message: 'We\'re experiencing high demand right now. Please try again in a few moments.',
+          suggestion: 'If the problem persists, try a different file format or smaller file size.'
+        });
+      } else if (error.originalError?.response?.status === 413) {
+        // File too large error
+        setUploadError({
+          title: 'File Too Large',
+          message: 'Your CV file exceeds our maximum allowed size.',
+          suggestion: 'Please compress your file or use a smaller file format (PDF preferred).'
+        });
+      } else if (error.originalError?.response?.status === 415) {
+        // Unsupported file type
+        setUploadError({
+          title: 'Unsupported File Type',
+          message: 'The file format you uploaded is not supported.',
+          suggestion: 'Please use PDF, DOCX, or TXT formats.'
+        });
+      } else {
+        // Generic error
+        setUploadError({
+          title: 'Upload Failed',
+          message: errorMessage,
+          suggestion: 'Please try again or use a different file.'
+        });
       }
-
-      toast.error(errorMessage);
-      setIsLoading(false);
-      setUploadProgress(0);
-      setCurrentStage(0);
-      setStages(stages => stages.map(stage => ({...stage, active: false, completed: false})));
+    } finally {
+      setUploading(false);
     }
   };
 
