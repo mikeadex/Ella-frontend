@@ -1,9 +1,18 @@
 // api.js
 import axios from "axios";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
-import createEnhancedApi from './utils/apiEnhancer';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// Configure global axios defaults for enterprise-grade reliability
+axios.defaults.timeout = 60000; // 60 seconds
+axios.defaults.maxContentLength = 50 * 1024 * 1024; // 50MB limit for file uploads
+axios.defaults.maxBodyLength = 50 * 1024 * 1024; // 50MB limit for request body
+
+// Configuration for retries
+const RETRY_COUNT = 3;
+const RETRY_DELAY = 1000; // 1 second in ms
+const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 // Create a custom axios instance with special handling for auth endpoints
 const createAuthApi = () => {
@@ -14,6 +23,20 @@ const createAuthApi = () => {
     },
     withCredentials: true, // Always include credentials for auth requests
     timeout: 30000,
+  });
+};
+
+// Create a file upload API instance with special configuration
+const createFileUploadApi = () => {
+  return axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    withCredentials: true,
+    timeout: 120000, // 2 minutes for file uploads
+    maxContentLength: 50 * 1024 * 1024, // 50MB
+    maxBodyLength: 50 * 1024 * 1024, // 50MB
   });
 };
 
@@ -29,6 +52,34 @@ const api = axios.create({
 
 console.log('Base URL:', BASE_URL);
 
+// Helper function to implement retry logic
+const retryRequest = async (config, retryCount = 0) => {
+  try {
+    return await axios(config);
+  } catch (error) {
+    // Only retry on network errors or specific status codes
+    const shouldRetry = (
+      error.code === 'ECONNABORTED' || 
+      error.code === 'ERR_NETWORK' ||
+      (error.response && RETRY_STATUS_CODES.includes(error.response.status))
+    );
+    
+    // If we should retry and haven't exceeded max retries
+    if (shouldRetry && retryCount < RETRY_COUNT) {
+      console.log(`Retrying request (${retryCount + 1}/${RETRY_COUNT})...`);
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      
+      // Retry with incremented count
+      return retryRequest(config, retryCount + 1);
+    }
+    
+    // If we shouldn't retry or have exceeded max retries, throw the error
+    throw error;
+  }
+};
+
 // Add a request interceptor to check if access token exists in local storage
 api.interceptors.request.use(
     (config) => {
@@ -43,8 +94,62 @@ api.interceptors.request.use(
     }
 );
 
-// Create an enhanced version of the API with resilience features
-const enhancedApi = createEnhancedApi(api);
+// File upload with progress, retry logic and better error handling
+api.uploadFile = async (endpoint, formData, onProgress = () => {}) => {
+  const fileUploadApi = createFileUploadApi();
+  
+  // Get token for authorization
+  const token = localStorage.getItem(ACCESS_TOKEN);
+  if (token) {
+    fileUploadApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+  
+  try {
+    let retryCount = 0;
+    let lastError = null;
+    
+    while (retryCount <= RETRY_COUNT) {
+      try {
+        // Add progress tracking
+        const response = await fileUploadApi.post(endpoint, formData, {
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percentCompleted);
+          }
+        });
+        
+        return response;
+      } catch (error) {
+        lastError = error;
+        
+        // Only retry on network errors or specific status codes
+        const shouldRetry = (
+          error.code === 'ECONNABORTED' || 
+          error.code === 'ERR_NETWORK' ||
+          (error.response && RETRY_STATUS_CODES.includes(error.response.status))
+        );
+        
+        if (shouldRetry && retryCount < RETRY_COUNT) {
+          retryCount++;
+          console.log(`Retrying file upload (${retryCount}/${RETRY_COUNT})...`);
+          
+          // Wait before retrying with progressive backoff
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+          continue;
+        }
+        
+        // If we shouldn't retry or have exceeded max retries, throw the error
+        throw error;
+      }
+    }
+    
+    // If we've exhausted retries, throw the last error
+    throw lastError;
+  } catch (error) {
+    console.error('File upload failed after retries:', error);
+    throw error;
+  }
+};
 
 // Special function for auth-related requests to avoid token interference
 api.authRequest = async (method, endpoint, data = {}) => {
@@ -128,37 +233,6 @@ api.interceptors.response.use(
         }
     }
 );
-
-// Add enhanced API methods to the base API
-api.resilient = enhancedApi;
-
-// Add file upload with retry logic
-api.uploadFile = async (url, file, additionalData = {}, onProgress = null) => {
-  return enhancedApi.uploadFile(url, file, onProgress, additionalData, {
-    maxRetries: 3,
-    retryDelay: 2000
-  });
-};
-
-// Add a specific method for CV parsing that's more resilient
-api.parseCV = async (file, additionalData = {}, onProgress = null) => {
-  try {
-    console.log('Starting resilient CV parsing upload with retries');
-    
-    return await api.uploadFile('/api/cv_parser/parse-cv/', file, additionalData, onProgress);
-  } catch (error) {
-    console.error('CV parsing failed after multiple retries:', error);
-    
-    // Provide a user-friendly error message
-    const enhancedError = new Error(
-      'We\'re having trouble processing your CV right now. ' +
-      'Our servers are experiencing high demand. ' +
-      'Please try again in a few moments.'
-    );
-    enhancedError.originalError = error;
-    throw enhancedError;
-  }
-};
 
 export default api;
 // default api will be used to make requests to the backend instead of calling axios directly and all the requests will have the access token in the header.
