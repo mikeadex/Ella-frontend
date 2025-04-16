@@ -1,31 +1,34 @@
 import React from 'react';
-import { Box, Paper, Typography, Chip } from '@mui/material';
+import { Box, Typography, Chip } from '@mui/material';
 
-const PotentialRoles = ({ potentialRoles, isDark }) => {
+const PotentialRoles = ({ roles, isDark }) => {
+  if (!roles || (!roles.best_matches && !roles.other_options)) {
+    return null;
+  }
+
   return (
-    <Paper elevation={0} variant="outlined" sx={{ 
-      padding: '1.5rem', 
-      backgroundColor: isDark ? '#0f172a' : '#f9fafb',
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    }}>
-      <Typography variant="h6" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>Potential Matching Roles</Typography>
-      
+    <Box>
       {/* Best Matches */}
-      {potentialRoles.best_matches?.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" color={isDark ? '#f1f5f9' : 'inherit'}>
+      {roles.best_matches?.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
             Best Job Matches
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', mt: 1 }}>
-            {potentialRoles.best_matches.map((role, i) => (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+            {roles.best_matches.map((role, i) => (
               <Chip
                 key={i}
                 label={role}
-                variant="outlined"
                 sx={{ 
-                  backgroundColor: isDark ? 'rgba(14, 116, 144, 0.2)' : '#e0f2fe', 
-                  borderColor: isDark ? 'rgba(14, 116, 144, 0.5)' : '#7dd3fc',
-                  color: isDark ? '#22d3ee' : '#0369a1'
+                  backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.1)', 
+                  borderColor: isDark ? '#3b82f6' : '#2563eb',
+                  color: isDark ? '#60a5fa' : '#2563eb',
+                  fontWeight: 500,
+                  border: '1px solid',
+                  borderRadius: '4px',
+                  '& .MuiChip-label': {
+                    padding: '6px 10px',
+                  }
                 }}
               />
             ))}
@@ -34,19 +37,21 @@ const PotentialRoles = ({ potentialRoles, isDark }) => {
       )}
       
       {/* Match Reasons */}
-      {potentialRoles.match_reasons?.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" color={isDark ? '#f1f5f9' : 'inherit'}>
+      {roles.match_reasons?.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
             Why These Roles Match Your Profile
           </Typography>
           <Box component="ul" sx={{ 
             margin: 0,
-            marginTop: 1,
-            paddingLeft: '1.5rem',
-            color: isDark ? '#cbd5e1' : 'inherit'
+            paddingLeft: '1.25rem',
+            '& li': {
+              mb: 1,
+              color: isDark ? '#cbd5e1' : '#475569'
+            }
           }}>
-            {potentialRoles.match_reasons.map((reason, i) => (
-              <Box component="li" key={i} sx={{ mb: 1 }}>
+            {roles.match_reasons.map((reason, i) => (
+              <Box component="li" key={i}>
                 {reason}
               </Box>
             ))}
@@ -54,29 +59,57 @@ const PotentialRoles = ({ potentialRoles, isDark }) => {
         </Box>
       )}
       
-      {/* Suggested Industries */}
-      {potentialRoles.suggested_industries?.length > 0 && (
-        <Box>
-          <Typography variant="subtitle1" color={isDark ? '#f1f5f9' : 'inherit'}>
-            Recommended Industries
+      {/* Other Options */}
+      {roles.other_options?.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+            Other Career Options
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', mt: 1 }}>
-            {potentialRoles.suggested_industries.map((industry, i) => (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+            {roles.other_options.map((role, i) => (
               <Chip
                 key={i}
-                label={industry}
-                variant="outlined"
+                label={role}
                 sx={{ 
-                  backgroundColor: isDark ? 'rgba(124, 58, 237, 0.2)' : '#ede9fe', 
-                  borderColor: isDark ? 'rgba(124, 58, 237, 0.5)' : '#c4b5fd',
-                  color: isDark ? '#a78bfa' : '#6d28d9'
+                  backgroundColor: isDark ? 'rgba(14, 165, 233, 0.1)' : 'rgba(14, 165, 233, 0.1)', 
+                  borderColor: isDark ? '#0ea5e9' : '#0284c7',
+                  color: isDark ? '#38bdf8' : '#0284c7',
+                  fontWeight: 500,
+                  border: '1px solid',
+                  borderRadius: '4px',
+                  '& .MuiChip-label': {
+                    padding: '6px 10px',
+                  }
                 }}
               />
             ))}
           </Box>
         </Box>
       )}
-    </Paper>
+      
+      {/* Career Growth Suggestions */}
+      {roles.career_growth_suggestions?.length > 0 && (
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+            Career Growth Suggestions
+          </Typography>
+          <Box component="ul" sx={{ 
+            margin: 0,
+            paddingLeft: '1.25rem',
+            '& li': {
+              mb: 1,
+              color: isDark ? '#cbd5e1' : '#475569'
+            }
+          }}>
+            {roles.career_growth_suggestions.map((suggestion, i) => (
+              <Box component="li" key={i}>
+                {suggestion}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 };
 

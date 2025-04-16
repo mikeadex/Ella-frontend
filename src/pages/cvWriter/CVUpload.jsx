@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaCloudUploadAlt, FaArrowLeft, FaTrash, FaFilePdf, FaFileWord, FaFileAlt, FaSpinner, FaCheck, FaRobot, FaMagic, FaFileExport } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaArrowLeft, FaTrash, FaFilePdf, FaFileWord, FaFileAlt, FaSpinner, FaCheck, FaRobot, FaMagic, FaFileExport, FaExclamationTriangle } from 'react-icons/fa';
 import { AiOutlineFileSearch } from 'react-icons/ai';
-import { BsCloudUpload, BsFileEarmarkText, BsGear } from 'react-icons/bs';
+import { BsCloudUpload, BsFileEarmarkText, BsGear, BsEye } from 'react-icons/bs';
 import axiosInstance from '../../api/axios';
+import { uploadDocument } from '../../api/cvParser';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-hot-toast';
@@ -286,15 +287,10 @@ const StageContainer = styled.div`
 
 const Stage = styled.div`
   display: flex;
+  margin-bottom: 1rem;
   align-items: center;
-  gap: 1rem;
-  color: ${props => {
-    if (props.active) return props.isDark ? '#fbbf24' : '#3b82f6';
-    if (props.completed) return props.isDark ? '#10b981' : '#10b981';
-    return props.isDark ? 'rgba(255, 255, 255, 0.5)' : '#9ca3af';
-  }};
-  transition: all 0.3s ease;
-  opacity: ${props => props.active || props.completed ? 1 : props.isDark ? 0.6 : 0.75};
+  opacity: ${props => (props.active || props.completed) ? 1 : 0.6};
+  transition: opacity 0.3s ease;
 `;
 
 const StageIcon = styled.div`
@@ -304,21 +300,23 @@ const StageIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  background-color: ${props => {
-    if (props.active) return props.isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(59, 130, 246, 0.1)';
-    if (props.completed) return props.isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)';
-    return props.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(156, 163, 175, 0.1)';
-  }};
+  margin-right: 1rem;
+  background-color: ${props => 
+    props.completed ? '#10b981' : 
+    props.active ? (props.isDark ? '#3b82f6' : '#2563eb') : 
+    (props.isDark ? '#374151' : '#e5e7eb')
+  };
+  color: ${props => 
+    props.completed ? '#ffffff' : 
+    props.active ? '#ffffff' : 
+    (props.isDark ? '#9ca3af' : '#6b7280')
+  };
+  font-size: 1rem;
+  transition: all 0.3s ease;
   
   svg {
-    animation: ${props => props.active ? 'pulse 1.5s infinite ease-in-out' : 'none'};
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    transition: transform 0.3s ease;
+    transform: ${props => props.active ? 'scale(1.2)' : 'scale(1)'};
   }
 `;
 
@@ -326,19 +324,21 @@ const StageContent = styled.div`
   flex: 1;
   
   h4 {
-    font-weight: 500;
+    margin: 0;
     font-size: 1rem;
-    margin-bottom: 0.25rem;
-    color: ${props => {
-      if (props.active) return props.isDark ? '#fbbf24' : '#3b82f6';
-      if (props.completed) return props.isDark ? '#10b981' : '#10b981';
-      return props.isDark ? 'rgba(255, 255, 255, 0.8)' : '#4b5563';
-    }};
+    font-weight: 600;
+    color: ${props => 
+      props.completed ? '#10b981' : 
+      props.active ? (props.isDark ? '#3b82f6' : '#2563eb') : 
+      (props.isDark ? '#d1d5db' : '#4b5563')
+    };
+    transition: color 0.3s ease;
   }
   
   p {
-    font-size: 0.8rem;
-    color: ${props => props.isDark ? 'rgba(255, 255, 255, 0.6)' : '#6b7280'};
+    margin: 0.2rem 0 0 0;
+    font-size: 0.85rem;
+    color: ${props => props.isDark ? '#9ca3af' : '#6b7280'};
   }
 `;
 
@@ -447,6 +447,295 @@ const LoadingFooter = styled.div`
   font-size: 0.8rem;
 `;
 
+const ConfirmationOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ConfirmationDialog = styled.div`
+  background-color: ${props => props.isDark ? '#1f2937' : '#ffffff'};
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  color: ${props => props.isDark ? '#f3f4f6' : '#1f2937'};
+  
+  @media (max-width: 768px) {
+    width: 95%;
+    padding: 1.25rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  @media (max-width: 480px) {
+    width: 95%;
+    padding: 1rem;
+    border-radius: 10px;
+  }
+`;
+
+const ConfirmationHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  
+  .icon {
+    font-size: 2rem;
+    color: ${props => props.isDark ? '#f59e0b' : '#f59e0b'};
+    
+    @media (max-width: 480px) {
+      font-size: 1.5rem;
+    }
+  }
+  
+  h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    
+    @media (max-width: 480px) {
+      font-size: 1.1rem;
+    }
+  }
+`;
+
+const ConfirmationMessage = styled.p`
+  margin: 1rem 0;
+  line-height: 1.5;
+  font-size: 1rem;
+  color: ${props => props.isDark ? '#d1d5db' : '#4b5563'};
+  
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    margin: 0.75rem 0;
+  }
+`;
+
+const ExistingCVInfo = styled.div`
+  background-color: ${props => props.isDark ? '#111827' : '#f3f4f6'};
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  
+  .file-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+  }
+  
+  .file-date {
+    color: ${props => props.isDark ? '#9ca3af' : '#6b7280'};
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+`;
+
+const ConfirmationActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 600px) {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+`;
+
+const ViewExistingButton = styled.button`
+  background-color: ${props => props.isDark ? '#2c3e50' : '#e9ecef'};
+  color: ${props => props.isDark ? '#e1e1e1' : '#333'};
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 44px; /* Minimum touch target size */
+  
+  &:hover {
+    background-color: ${props => props.isDark ? '#34495e' : '#dee2e6'};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  @media (max-width: 600px) {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+`;
+
+const CancelButton = styled.button`
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  background-color: ${props => props.isDark ? '#374151' : '#e5e7eb'};
+  color: ${props => props.isDark ? '#d1d5db' : '#4b5563'};
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px; /* Minimum touch target size */
+  
+  &:hover {
+    background-color: ${props => props.isDark ? '#4b5563' : '#d1d5db'};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  @media (max-width: 600px) {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+`;
+
+const ConfirmButton = styled.button`
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 44px; /* Minimum touch target size */
+  
+  &:hover {
+    background-color: #dc2626;
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+  }
+  
+  @media (max-width: 600px) {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    flex: 1;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+`;
+
+const RecentCVs = styled.div`
+  width: 100%;
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+  padding-top: 1.5rem;
+`;
+
+const RecentCVsTitle = styled.h3`
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #555;
+`;
+
+const CVItem = styled.div`
+  padding: 0.8rem;
+  background-color: ${props => props.theme === 'dark' ? '#2a2b31' : '#f8f9fa'};
+  border-radius: 8px;
+  margin-bottom: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => props.theme === 'dark' ? '#36373d' : '#e9ecef'};
+  }
+`;
+
+const CVInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const CVName = styled.h4`
+  margin: 0;
+  font-size: 1rem;
+  color: ${props => props.theme === 'dark' ? '#e1e1e1' : '#333'};
+`;
+
+const CVDate = styled.span`
+  font-size: 0.8rem;
+  color: ${props => props.theme === 'dark' ? '#9ca3af' : '#6c757d'};
+`;
+
+const ViewButton = styled.button`
+  background-color: ${props => props.theme === 'dark' ? '#4b5563' : '#e2e8f0'};
+  color: ${props => props.theme === 'dark' ? '#e1e1e1' : '#333'};
+  border: none;
+  border-radius: 5px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => props.theme === 'dark' ? '#6b7280' : '#cbd5e1'};
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+`;
+
+const NoCVsMessage = styled.p`
+  color: ${props => props.theme === 'dark' ? '#9ca3af' : '#6c757d'};
+  text-align: center;
+  font-style: italic;
+  margin: 1rem 0;
+`;
+
 function CVUpload() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -457,12 +746,18 @@ function CVUpload() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStage, setCurrentStage] = useState(0);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [existingCVInfo, setExistingCVInfo] = useState(null);
+  
   const [stages, setStages] = useState([
     { id: 1, name: 'File Upload', description: 'Uploading your CV to our secure servers', icon: BsCloudUpload, completed: false, active: false },
     { id: 2, name: 'Document Processing', description: 'Converting your document for analysis', icon: BsFileEarmarkText, completed: false, active: false },
     { id: 3, name: 'AI Analysis', description: 'Extracting and structuring your CV data', icon: FaRobot, completed: false, active: false },
     { id: 4, name: 'Final Processing', description: 'Preparing your CV for preview', icon: BsGear, completed: false, active: false }
   ]);
+
+  const [recentCVs, setRecentCVs] = useState([]);
+  const [loadingRecentCVs, setLoadingRecentCVs] = useState(false);
 
   // Function to update the current stage
   const updateStage = (stageId, isCompleted = false) => {
@@ -579,27 +874,10 @@ function CVUpload() {
     updateStage(1);
 
     try {
-      const formData = new FormData();
-      formData.append('cv_file', selectedFile);
-
-      // Stage 1: File Upload (0-25%)
-      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      // Use the uploadDocument API function
+      const response = await uploadDocument(selectedFile, false);
       
-      const response = await axiosInstance.post('/api/cv_parser/parse-cv/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
-        timeout: 180000, // 3 minutes timeout for large files
-        onUploadProgress: (progressEvent) => {
-          // Calculate progress for upload stage (0-25%)
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 25) / progressEvent.total
-          );
-          setUploadProgress(percentCompleted);
-        }
-      });
-
+      // Handle successful upload
       // Mark Stage 1 as completed
       updateStage(1, true);
       
@@ -652,7 +930,7 @@ function CVUpload() {
               
               // Navigate to the CV parser preview page after a brief pause
               setTimeout(() => {
-                const cvId = response.data.cv_id;
+                const cvId = response.id || response.cv_id || response.data?.id || response.data?.cv_id;
                 navigate(`/cv-parser-preview/${cvId}`);
                 toast.success('CV uploaded and parsed successfully!');
               }, 500);
@@ -666,6 +944,18 @@ function CVUpload() {
       
     } catch (error) {
       console.error('Error uploading CV:', error);
+
+      // Check if this is a confirmation required error
+      if (error.requiresConfirmation && error.existingCVInfo) {
+        // Show confirmation dialog
+        setExistingCVInfo(error.existingCVInfo);
+        setShowConfirmation(true);
+        setIsLoading(false);
+        setUploadProgress(0);
+        setCurrentStage(0);
+        setStages(stages => stages.map(stage => ({...stage, active: false, completed: false})));
+        return;
+      }
 
       let errorMessage = 'Failed to upload CV. Please try again.';
 
@@ -693,6 +983,119 @@ function CVUpload() {
       setStages(stages => stages.map(stage => ({...stage, active: false, completed: false})));
     }
   };
+  
+  // Handle overwrite confirmation
+  const handleConfirmOverwrite = async () => {
+    setShowConfirmation(false);
+    setIsLoading(true);
+    setUploadProgress(0);
+    
+    // Start the first stage - File Upload
+    updateStage(1);
+    
+    try {
+      // Call the API with force_overwrite=true
+      const response = await uploadDocument(selectedFile, true);
+      
+      // Mark Stage 1 as completed
+      updateStage(1, true);
+      
+      // Stages 2-4 (same as in handleSubmit)
+      // Stage 2: Document Processing (25-50%)
+      updateStage(2);
+      
+      const processingTime = 2000; // 2 seconds
+      const processingInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const next = prev + 1;
+          if (next >= 50) {
+            clearInterval(processingInterval);
+            // Start Stage 3
+            updateStage(2, true);
+            updateStage(3);
+            return 50;
+          }
+          return next;
+        });
+      }, processingTime / 25);
+      
+      // Stage 3: AI Analysis (50-85%)
+      setTimeout(() => {
+        const analysisTime = 5000; // 5 seconds
+        const analysisInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            const next = prev + 1;
+            if (next >= 85) {
+              clearInterval(analysisInterval);
+              // Start Stage 4
+              updateStage(3, true);
+              updateStage(4);
+              return 85;
+            }
+            return next;
+          });
+        }, analysisTime / 35);
+      }, processingTime + 500);
+      
+      // Stage 4: Final Processing (85-100%)
+      setTimeout(() => {
+        const finalTime = 2000; // 2 seconds
+        const finalInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            const next = prev + 1;
+            if (next >= 100) {
+              clearInterval(finalInterval);
+              updateStage(4, true);
+              
+              // Navigate to the CV parser preview page after a brief pause
+              setTimeout(() => {
+                const cvId = response.id || response.cv_id || response.data?.id || response.data?.cv_id;
+                navigate(`/cv-parser-preview/${cvId}`);
+                toast.success('CV replaced and parsed successfully!');
+              }, 500);
+              
+              return 100;
+            }
+            return next;
+          });
+        }, finalTime / 15);
+      }, processingTime + 5500);
+      
+    } catch (error) {
+      console.error('Error replacing CV:', error);
+      toast.error('Failed to replace existing CV. Please try again.');
+      setIsLoading(false);
+      setUploadProgress(0);
+      setCurrentStage(0);
+      setStages(stages => stages.map(stage => ({...stage, active: false, completed: false})));
+    }
+  };
+  
+  const handleViewExistingCV = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  
+    // Navigate to the existing CV preview page
+    if (existingCVInfo && existingCVInfo.id) {
+      // Use the same handleViewCV function we defined earlier
+      handleViewCV(existingCVInfo.id);
+      
+      // Optionally close the dialog after navigation
+      setShowConfirmation(false);
+    }
+  };
+  
+  const handleCancelOverwrite = () => {
+    setShowConfirmation(false);
+    
+    // Option to navigate to existing CV
+    if (existingCVInfo && existingCVInfo.id) {
+      toast('You can view your existing CV in the dashboard', {
+        icon: '📄',
+        duration: 5000,
+      });
+    }
+  };
 
   const handleBack = () => {
     navigate('/cv-writer');
@@ -700,6 +1103,57 @@ function CVUpload() {
 
   const handleAreaClick = () => {
     document.getElementById('file-input').click();
+  };
+
+  useEffect(() => {
+    const fetchRecentCVs = async () => {
+      try {
+        setLoadingRecentCVs(true);
+        
+        // Get the token from localStorage or sessionStorage
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        
+        if (!token) {
+          console.log('User not authenticated, skipping recent CVs fetch');
+          return;
+        }
+        
+        const response = await axiosInstance.get('/api/ai_cv_parser/parser/', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data && Array.isArray(response.data.results)) {
+          // Sort by most recent first and limit to 5
+          const sortedCVs = response.data.results
+            .sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))
+            .slice(0, 5);
+          
+          setRecentCVs(sortedCVs);
+        }
+      } catch (error) {
+        console.error('Error fetching recent CVs:', error);
+        // Don't show an error message to the user, just log it
+      } finally {
+        setLoadingRecentCVs(false);
+      }
+    };
+    
+    fetchRecentCVs();
+  }, []);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const handleViewCV = (cvId) => {
+    navigate(`/cv-parser-preview/${cvId}`);
   };
 
   return (
@@ -790,6 +1244,33 @@ function CVUpload() {
         </Button>
       </UploadContainer>
       
+      {/* Recent CVs section */}
+      {recentCVs.length > 0 && (
+        <RecentCVs>
+          <RecentCVsTitle isDark={isDark}>Recently Parsed CVs</RecentCVsTitle>
+          {loadingRecentCVs ? (
+            <div style={{ textAlign: 'center', padding: '1rem' }}>
+              <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
+              <span style={{ marginLeft: '0.5rem' }}>Loading your recent CVs...</span>
+            </div>
+          ) : (
+            <>
+              {recentCVs.map(cv => (
+                <CVItem key={cv.id} theme={isDark ? 'dark' : 'light'}>
+                  <CVInfo>
+                    <CVName theme={isDark ? 'dark' : 'light'}>{cv.file_name || `CV #${cv.id}`}</CVName>
+                    <CVDate theme={isDark ? 'dark' : 'light'}>Uploaded: {formatDate(cv.uploaded_at)}</CVDate>
+                  </CVInfo>
+                  <ViewButton theme={isDark ? 'dark' : 'light'} onClick={() => handleViewCV(cv.id)}>
+                    View CV
+                  </ViewButton>
+                </CVItem>
+              ))}
+            </>
+          )}
+        </RecentCVs>
+      )}
+      
       {/* Loading Modal */}
       {isLoading && (
         <LoadingOverlay isDark={isDark}>
@@ -826,13 +1307,13 @@ function CVUpload() {
               {stages.map(stage => (
                 <Stage 
                   key={stage.id} 
-                  active={stage.active} 
-                  completed={stage.completed}
+                  active={stage.active ? 1 : 0} 
+                  completed={stage.completed ? 1 : 0}
                   isDark={isDark}
                 >
                   <StageIcon
-                    active={stage.active}
-                    completed={stage.completed}
+                    active={stage.active ? 1 : 0}
+                    completed={stage.completed ? 1 : 0}
                     isDark={isDark}
                   >
                     {stage.completed ? (
@@ -843,8 +1324,8 @@ function CVUpload() {
                   </StageIcon>
                   
                   <StageContent
-                    active={stage.active}
-                    completed={stage.completed}
+                    active={stage.active ? 1 : 0}
+                    completed={stage.completed ? 1 : 0}
                     isDark={isDark}
                   >
                     <h4>{stage.name}</h4>
@@ -863,6 +1344,48 @@ function CVUpload() {
             </LoadingFooter>
           </LoadingModal>
         </LoadingOverlay>
+      )}
+      
+      {/* Confirmation Dialog for CV Overwrite */}
+      {showConfirmation && (
+        <ConfirmationOverlay>
+          <ConfirmationDialog isDark={isDark}>
+            <ConfirmationHeader isDark={isDark}>
+              <FaExclamationTriangle className="icon" />
+              <h3>Existing CV Found</h3>
+            </ConfirmationHeader>
+            
+            <ConfirmationMessage isDark={isDark}>
+              You already have a CV in our system. Uploading a new CV will replace your existing one.
+              All analysis, improvements and other data associated with your current CV will be lost.
+            </ConfirmationMessage>
+            
+            {existingCVInfo && (
+              <ExistingCVInfo isDark={isDark}>
+                <div className="file-name">{existingCVInfo.name}</div>
+                <div className="file-date">
+                  Uploaded on {new Date(existingCVInfo.date).toLocaleDateString()}
+                </div>
+              </ExistingCVInfo>
+            )}
+            
+            <ConfirmationActions>
+              <CancelButton isDark={isDark} onClick={handleCancelOverwrite}>
+                Cancel
+              </CancelButton>
+              
+              {existingCVInfo && existingCVInfo.id && (
+                <ViewExistingButton isDark={isDark} onClick={handleViewExistingCV}>
+                  <BsEye /> View Existing CV
+                </ViewExistingButton>
+              )}
+              
+              <ConfirmButton isDark={isDark} onClick={handleConfirmOverwrite}>
+                Replace Existing CV
+              </ConfirmButton>
+            </ConfirmationActions>
+          </ConfirmationDialog>
+        </ConfirmationOverlay>
       )}
     </Container>
   );

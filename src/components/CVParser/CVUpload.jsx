@@ -40,6 +40,9 @@ const CVUpload = ({ onParseSuccess }) => {
     const [uploadStartTime, setUploadStartTime] = useState(null);
     const [parsingTime, setParsingTime] = useState(null);
     const [transferringToWriter, setTransferringToWriter] = useState(false);
+    const [needsConfirmation, setNeedsConfirmation] = useState(false);
+    const [confirmationMessage, setConfirmationMessage] = useState('');
+    const [existingCVInfo, setExistingCVInfo] = useState(null);
     const { isAuthenticated, user } = useAuth();
     const navigate = useNavigate();
 
@@ -116,7 +119,7 @@ const CVUpload = ({ onParseSuccess }) => {
         }
     };
 
-    const handleUpload = async (event) => {
+    const handleUpload = async (event, forceOverwrite = false) => {
         event.preventDefault();
         
         if (!file) {
@@ -128,10 +131,11 @@ const CVUpload = ({ onParseSuccess }) => {
         setError(null);
         setUploadStartTime(Date.now());
         setParsingProgress(0);
+        setNeedsConfirmation(false);
 
         try {
             console.log('Uploading with authenticated user:', user?.email);
-            const result = await uploadDocument(file);
+            const result = await uploadDocument(file, forceOverwrite);
             
             // Progress simulation for better UX
             const intervalId = setInterval(() => {
@@ -195,6 +199,15 @@ const CVUpload = ({ onParseSuccess }) => {
                 throw new Error('Invalid response format from parser');
             }
         } catch (err) {
+            // Handle confirmation required case
+            if (err.requiresConfirmation) {
+                setNeedsConfirmation(true);
+                setConfirmationMessage(err.confirmationMessage);
+                setExistingCVInfo(err.existingCVInfo);
+                setLoading(false);
+                return;
+            }
+            
             clearInterval(intervalId);
             setLoading(false);
             setParsingProgress(0);
@@ -523,8 +536,46 @@ const CVUpload = ({ onParseSuccess }) => {
         );
     };
 
+    // Add confirmation dialog UI
+    const renderConfirmationDialog = () => {
+        if (!needsConfirmation) return null;
+        
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <h3 className="text-lg font-semibold mb-2">Warning: Existing CV Found</h3>
+                    <p className="mb-4">{confirmationMessage}</p>
+                    
+                    {existingCVInfo && (
+                        <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 text-sm">
+                            <p><strong>File name:</strong> {existingCVInfo.name}</p>
+                            <p><strong>Uploaded on:</strong> {new Date(existingCVInfo.date).toLocaleString()}</p>
+                        </div>
+                    )}
+                    
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            onClick={() => setNeedsConfirmation(false)}
+                            className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={(e) => handleUpload(e, true)}
+                            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                            Replace Existing CV
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-xl border border-gray-100 dark:border-gray-700">
+            {renderConfirmationDialog()}
+            
             <div className="text-center mb-8">
                 <DocumentTextIcon className="mx-auto h-16 w-16 text-blue-500 opacity-70" />
                 <h2 className="mt-4 text-2xl font-bold text-gray-800">CV Parser</h2>
@@ -583,7 +634,7 @@ const CVUpload = ({ onParseSuccess }) => {
             {renderParsingStatus()}
 
             <button
-                onClick={handleUpload}
+                onClick={(e) => handleUpload(e)}
                 disabled={!file || loading || !isAuthenticated}
                 className={`w-full py-3 px-6 rounded-lg text-white font-semibold tracking-wide uppercase text-sm
                     transition duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2

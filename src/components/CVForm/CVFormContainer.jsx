@@ -88,7 +88,7 @@ const StepTitle = styled.h2`
   margin-bottom: 2rem;
 `;
 
-const CVFormContainer = memo(({ onCVCreated }) => {
+const CVFormContainer = memo(({ onSubmit, onCVCreated, initialValues, isEditing }) => {
   const [step, setStep] = useState(1);
   const { 
     state, 
@@ -100,6 +100,20 @@ const CVFormContainer = memo(({ onCVCreated }) => {
     canUndo,
     canRedo
   } = useCVForm();
+
+  // Initialize form with passed values when available
+  useEffect(() => {
+    if (initialValues) {
+      console.log('Initializing form with data:', initialValues);
+      
+      // Update each section with its initial values
+      Object.keys(initialValues).forEach(section => {
+        if (initialValues[section] !== undefined) {
+          updateSection(section, initialValues[section]);
+        }
+      });
+    }
+  }, [initialValues, updateSection]);
 
   // Ensure state is available before rendering
   if (!state || !state.personalInfo) {
@@ -319,9 +333,14 @@ const CVFormContainer = memo(({ onCVCreated }) => {
   const handleSubmit = useCallback(() => {
     const isValid = steps.every(step => step.validate(state[step.key]));
     if (isValid) {
-      onCVCreated(state);
+      // Support both prop names for backward compatibility
+      if (onSubmit) {
+        onSubmit(state);
+      } else if (onCVCreated) {
+        onCVCreated(state);
+      }
     }
-  }, [state, steps, onCVCreated]);
+  }, [state, steps, onSubmit, onCVCreated]);
 
   useKeyboardShortcuts([
     {

@@ -1,7 +1,35 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { DocumentTextIcon, PencilIcon, DocumentChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-const AnalysisStages = ({ stages, isDark }) => {
+const RewriteStages = ({ stages, isDark }) => {
+  const getStageIcon = (stage) => {
+    if (stage.completed) {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1.5rem', height: '1.5rem' }}>
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+    
+    switch (stage.id) {
+      case 1:
+        return <DocumentChartBarIcon style={{ width: '1.5rem', height: '1.5rem' }} />;
+      case 2:
+        return <PencilIcon style={{ width: '1.5rem', height: '1.5rem' }} />;
+      case 3:
+        return <DocumentTextIcon style={{ width: '1.5rem', height: '1.5rem' }} />;
+      case 4:
+        return <SparklesIcon style={{ width: '1.5rem', height: '1.5rem' }} />;
+      default:
+        return (
+          <Typography variant="body1" component="span" sx={{ fontWeight: stage.active ? 700 : 600, fontSize: '1rem' }}>
+            {stage.id}
+          </Typography>
+        );
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', maxWidth: 600, mx: 'auto' }}>
       {stages.map((stage) => (
@@ -53,23 +81,9 @@ const AnalysisStages = ({ stages, isDark }) => {
               transition: 'all 0.3s ease',
             }}
           >
-            {stage.completed ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1.5rem', height: '1.5rem' }}>
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <Typography 
-                variant="body1" 
-                component="span" 
-                sx={{ 
-                  fontWeight: stage.active ? 700 : 600,
-                  fontSize: '1rem'
-                }}
-              >
-                {stage.id}
-              </Typography>
-            )}
+            {getStageIcon(stage)}
           </Box>
+          
           <Box sx={{ 
             display: 'flex',
             flexDirection: 'column',
@@ -88,8 +102,9 @@ const AnalysisStages = ({ stages, isDark }) => {
                   : isDark ? '#cbd5e1' : '#334155'
               }}
             >
-              {stage.title}
+              {stage.name}
             </Typography>
+            
             <Typography 
               variant="body2" 
               sx={{ 
@@ -101,6 +116,12 @@ const AnalysisStages = ({ stages, isDark }) => {
             >
               {stage.description}
             </Typography>
+
+            {stage.active && stage.progressContent && (
+              <Box sx={{ mt: 2, opacity: 0.9 }}>
+                {stage.progressContent}
+              </Box>
+            )}
           </Box>
         </Box>
       ))}
@@ -108,4 +129,4 @@ const AnalysisStages = ({ stages, isDark }) => {
   );
 };
 
-export default AnalysisStages;
+export default RewriteStages;

@@ -239,6 +239,15 @@ function AppRoutes() {
                   </ProtectedRoute>
                 }
               />
+              {/* Add route for editing rewritten CVs */}
+              <Route
+                path="/cv-writer/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <CVWriter />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </RouteTransition>
         </div>

@@ -73,6 +73,15 @@ Ella is a cutting-edge React-based web application designed to revolutionize pro
   * Performance insights
   * Interview management
 
+## 📚 Module Documentation
+
+Detailed documentation for key modules is available:
+
+- [CV Writer & Parser](/src/pages/cvWriter/README.md): Comprehensive documentation on CV uploading, parsing, analysis caching, and UI/UX implementation
+- [Authentication](/src/pages/auth/README.md): Authentication flow and security implementation details
+- [Job Applications](/src/pages/Applications/README.md): Job application tracking and management interface
+- [Dashboard](/src/pages/dashboard/README.md): User dashboard and analytics
+
 ## 🔧 Technical Architecture
 
 ### Core Technologies

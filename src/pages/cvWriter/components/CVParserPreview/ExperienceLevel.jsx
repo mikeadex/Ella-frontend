@@ -1,9 +1,14 @@
 import React from 'react';
-import { Box, Typography, Paper, LinearProgress } from '@mui/material';
+import { Box, Typography, Paper, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
 
-const ExperienceLevel = ({ experienceLevel, isDark, isMobile }) => {
+const ExperienceLevel = ({ experienceLevel, getLevelColor, isDark }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   // Extract years value and handle multiple property names, parsing strings if needed
   const getYearsValue = () => {
+    if (!experienceLevel) return 0;
+    
     // Check for all possible property names
     const yearsValue = experienceLevel.years_experience || 
                        experienceLevel.years_of_experience || 
@@ -20,140 +25,106 @@ const ExperienceLevel = ({ experienceLevel, isDark, isMobile }) => {
   };
 
   const yearsValue = getYearsValue();
+  const level = experienceLevel?.level || '';
+  const description = experienceLevel?.description || '';
   
   return (
-    <Paper elevation={0} variant="outlined" sx={{ 
-      padding: '1.5rem', 
-      backgroundColor: isDark ? '#0f172a' : '#f9fafb',
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    }}>
-      <Typography variant="h6" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>Experience Level</Typography>
-      
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: isMobile ? 'column' : 'row'
-      }}>
+    <Box>
+      <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 3 }}>
         {/* Years of Experience */}
-        <Box sx={{ 
-          flex: 1, 
-          mr: isMobile ? 0 : 2,
-          mb: isMobile ? 2 : 0
-        }}>
-          <Typography variant="subtitle1" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
             Years of Experience
           </Typography>
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center',
-            borderRadius: '8px',
-            backgroundColor: isDark ? 'rgba(14, 116, 144, 0.2)' : '#e0f2fe',
-            p: 2
+            gap: 2
           }}>
-            <Typography 
-              variant="h2" 
-              sx={{ 
-                fontWeight: 'bold',
-                color: isDark ? '#22d3ee' : '#0369a1'
-              }}
-            >
+            <Box sx={{ 
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+              borderWidth: '2px',
+              borderStyle: 'solid',
+              borderColor: isDark ? '#3b82f6' : '#2563eb',
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.3)',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: isDark ? '#60a5fa' : '#2563eb'
+            }}>
               {yearsValue}
-            </Typography>
-            <Typography variant="body1" sx={{ ml: 1, color: isDark ? '#cbd5e1' : 'text.secondary' }}>
-              {yearsValue === 1 ? 'year' : 'years'}
-            </Typography>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mb: 0.5, 
+                  fontWeight: 500,
+                  color: isDark ? '#e2e8f0' : '#334155' 
+                }}
+              >
+                {yearsValue < 2 ? 'Early Career' : 
+                 yearsValue < 5 ? 'Mid-Level' : 
+                 yearsValue < 10 ? 'Senior Level' : 'Expert Level'}
+              </Typography>
+              <LinearProgress 
+                variant="determinate" 
+                value={Math.min(100, (yearsValue / 15) * 100)} 
+                sx={{ 
+                  height: 8, 
+                  borderRadius: 4,
+                  backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: isDark ? '#3b82f6' : '#2563eb',
+                    borderRadius: 4
+                  }
+                }} 
+              />
+            </Box>
           </Box>
         </Box>
         
-        {/* Career Stage */}
+        {/* Experience Level Classification */}
         <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle1" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>
-            Career Stage
+          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+            Experience Classification
           </Typography>
           <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            backgroundColor: isDark ? 'rgba(124, 58, 237, 0.2)' : '#ede9fe',
+            border: '1px solid',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             borderRadius: '8px',
-            p: 2
+            padding: 2,
+            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.8)'
           }}>
             <Typography 
-              variant="h5" 
+              variant="h6" 
               sx={{ 
-                fontWeight: 'bold',
                 mb: 1,
-                color: isDark ? '#a78bfa' : '#6d28d9'
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                color: level && getLevelColor ? getLevelColor(experienceLevel.level_score || 5) : (isDark ? '#e2e8f0' : '#334155')
               }}
-              textAlign={isMobile ? 'center' : 'left'}
             >
-              {experienceLevel.classification || experienceLevel.career_stage || 'Entry Level'}
+              {level}
             </Typography>
-            <Typography variant="body2" sx={{ color: isDark ? '#cbd5e1' : 'text.secondary' }}>
-              {experienceLevel.stage_description || experienceLevel.career_stage || 'Starting your professional journey with foundational skills and knowledge.'}
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: isDark ? '#cbd5e1' : '#64748b',
+                lineHeight: 1.6
+              }}
+            >
+              {description}
             </Typography>
           </Box>
         </Box>
       </Box>
-      
-      {/* Industry Expertise */}
-      {experienceLevel.industry_expertise && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle1" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>
-            Industry Expertise
-          </Typography>
-          <Box sx={{ mt: 1 }}>
-            {Object.entries(experienceLevel.industry_expertise).map(([industry, level], index) => (
-              <Box key={index} sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="body2" color={isDark ? '#cbd5e1' : 'text.secondary'}>
-                    {industry}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    fontWeight="medium" 
-                    sx={{ color: (() => {
-                      if (level >= 80) return isDark ? '#10b981' : '#059669';
-                      if (level >= 60) return isDark ? '#f59e0b' : '#d97706';
-                      return isDark ? '#ef4444' : '#dc2626';
-                    })() }}
-                  >
-                    {level}%
-                  </Typography>
-                </Box>
-                <LinearProgress 
-                  variant="determinate"
-                  value={level}
-                  sx={{
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 3,
-                      backgroundColor: (() => {
-                        if (level >= 80) return isDark ? '#10b981' : '#059669';
-                        if (level >= 60) return isDark ? '#f59e0b' : '#d97706';
-                        return isDark ? '#ef4444' : '#dc2626';
-                      })()
-                    }
-                  }}
-                />
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      )}
-      
-      {/* Career Trajectory */}
-      {experienceLevel.career_trajectory && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle1" gutterBottom color={isDark ? '#f1f5f9' : 'inherit'}>
-            Career Trajectory
-          </Typography>
-          <Typography variant="body2" sx={{ color: isDark ? '#cbd5e1' : 'text.secondary' }}>
-            {experienceLevel.career_trajectory}
-          </Typography>
-        </Box>
-      )}
-    </Paper>
+    </Box>
   );
 };
 
