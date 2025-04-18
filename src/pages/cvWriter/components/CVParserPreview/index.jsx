@@ -67,6 +67,7 @@ const CVParserPreview = () => {
   const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
   const [personalInfo, setPersonalInfo] = useState(null);
   const [rewriteSessionId, setRewriteSessionId] = useState(null);
+  const [successCallback, setSuccessCallback] = useState(null);
   
   // State management for CV rewriting
   const [rewriteDialogOpen, setRewriteDialogOpen] = useState(false);
@@ -687,6 +688,11 @@ const CVParserPreview = () => {
       // Close the dialog
       setRewriteDialogOpen(false);
       
+      // Call the success callback if provided
+      if (successCallback) {
+        successCallback(result);
+      }
+      
       // Show success message
       toast.success('CV has been saved to your CV writer', {
         id: 'cv-saved-success',
@@ -704,10 +710,15 @@ const CVParserPreview = () => {
         duration: 5000,
       });
     }
-  }, [rewriteSessionId, navigate]);
+  }, [rewriteSessionId, navigate, successCallback]);
 
   // Handle initiating the save process - now opens personal info dialog first
-  const handleSaveRewrite = useCallback(() => {
+  const handleSaveRewrite = useCallback((successCallback) => {
+    // Store the callback for later use
+    if (successCallback && typeof successCallback === 'function') {
+      setSuccessCallback(() => successCallback);
+    }
+    
     // Open personal info dialog to collect information before saving
     setPersonalInfoDialogOpen(true);
   }, []);

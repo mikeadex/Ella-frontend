@@ -160,9 +160,8 @@ export const fetchInterests = async (cvId) => {
 
 export const fetchSocialMedia = async (cvId) => {
   try {
-    const response = await cvApi.get('social-media/', {
-      headers: getAuthHeader(),
-      params: { cv: cvId }
+    const response = await cvApi.get(`social-media/?user=${cvId}`, {
+      headers: getAuthHeader()
     });
     return response.data;
   } catch (error) {
@@ -173,13 +172,98 @@ export const fetchSocialMedia = async (cvId) => {
 
 export const fetchReferences = async (cvId) => {
   try {
-    const response = await cvApi.get('reference/', {
-      headers: getAuthHeader(),
-      params: { cv: cvId }
+    const response = await cvApi.get(`reference/?user=${cvId}`, {
+      headers: getAuthHeader()
     });
     return response.data;
   } catch (error) {
     console.error('Error fetching references:', error);
     throw new Error(error.response?.data?.error || 'Failed to fetch references');
+  }
+};
+
+// Template-related API functions
+export const fetchTemplates = async (options = {}) => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Add optional query parameters
+    if (options.category) {
+      params.append('category', options.category);
+    }
+    
+    if (options.organizeByCategory) {
+      params.append('organize_by_category', 'true');
+    }
+    
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const response = await cvApi.get(`templates/${queryString}`, {
+      headers: getAuthHeader()
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching CV templates:', error);
+    throw new Error(error.response?.data?.error || 'Failed to fetch CV templates');
+  }
+};
+
+export const fetchTemplateBySlug = async (slug) => {
+  try {
+    const response = await cvApi.get(`templates/${slug}/`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching template details for ${slug}:`, error);
+    throw new Error(error.response?.data?.error || 'Failed to fetch template details');
+  }
+};
+
+export const setTemplateForCV = async (cvId, templateId, customOptions = {}) => {
+  try {
+    const payload = {
+      template_id: templateId,
+      ...customOptions
+    };
+    
+    const response = await cvApi.put(`cv/${cvId}/set-template/`, payload, {
+      headers: {
+        ...getAuthHeader(),
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error setting template for CV:', error);
+    throw new Error(error.response?.data?.error || 'Failed to set template for CV');
+  }
+};
+
+export const getTemplateSelectionForCV = async (cvId) => {
+  try {
+    const response = await cvApi.get(`cv/${cvId}/template-selection/`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching template selection:', error);
+    throw new Error(error.response?.data?.error || 'Failed to fetch template selection');
+  }
+};
+
+export const updateTemplateSelectionForCV = async (cvId, selectionOptions) => {
+  try {
+    const response = await cvApi.put(`cv/${cvId}/template-selection/`, selectionOptions, {
+      headers: {
+        ...getAuthHeader(),
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating template selection:', error);
+    throw new Error(error.response?.data?.error || 'Failed to update template selection');
   }
 };

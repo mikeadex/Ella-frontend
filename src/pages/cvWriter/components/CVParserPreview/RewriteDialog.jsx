@@ -3,6 +3,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Typograp
 import CloseIcon from '@mui/icons-material/Close';
 import { DocumentTextIcon, CheckIcon, ArrowRightIcon, PencilIcon, DocumentChartBarIcon, SparklesIcon, TicketIcon } from '@heroicons/react/24/outline';
 import RewriteStages from './RewriteStages';
+import { TemplateSelectionDialog } from '../TemplateSelection';
 
 // Animation pages for each stage of the rewrite process
 const StageContent = ({ stage, isDark }) => {
@@ -277,6 +278,8 @@ const RewriteDialog = ({
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const [activeStageIndex, setActiveStageIndex] = useState(0);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [savedCvId, setSavedCvId] = useState(null);
 
   // Find the currently active stage index
   useEffect(() => {
@@ -567,7 +570,7 @@ const RewriteDialog = ({
             )}
             
             {/* Custom animation keyframes */}
-            <style jsx="true">{`
+            <style jsx global>{`
               @keyframes pulse {
                 0%, 100% { opacity: 1; }
                 50% { opacity: 0.4; }
@@ -583,6 +586,14 @@ const RewriteDialog = ({
               @keyframes indeterminateProgress {
                 0% { left: -30%; }
                 100% { left: 100%; }
+              }
+              @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0; }
+              }
+              @keyframes slideIn {
+                0% { transform: translateY(20px); opacity: 0; }
+                100% { transform: translateY(0); opacity: 1; }
               }
             `}</style>
           </Box>
@@ -728,21 +739,55 @@ const RewriteDialog = ({
         {rewriteData && (
           <Button 
             variant="contained" 
-            onClick={handleSaveRewrite}
-            startIcon={<ArrowRightIcon style={{ width: '1rem', height: '1rem' }} />}
+            color="primary"
+            disabled={loading}
+            startIcon={<CheckIcon style={{ width: '1.25rem', height: '1.25rem' }} />}
             sx={{ 
-              bgcolor: isDark ? '#3b82f6' : '#2563eb',
-              '&:hover': {
-                bgcolor: isDark ? '#2563eb' : '#1d4ed8',
-              },
-              textTransform: 'none',
-              px: 3
+              minWidth: '180px', 
+              fontWeight: 600,
+              mb: isMobile ? 2 : 0
+            }}
+            onClick={() => {
+              handleSaveRewrite(
+                // Add a success callback
+                (savedCvData) => {
+                  if (savedCvData && savedCvData.id) {
+                    setSavedCvId(savedCvData.id);
+                  }
+                }
+              );
             }}
           >
-            Save to CV Writer
+            Save CV
+          </Button>
+        )}
+        {savedCvId && (
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => setIsTemplateDialogOpen(true)}
+            sx={{ 
+              minWidth: '180px', 
+              fontWeight: 600,
+              ml: isMobile ? 0 : 2,
+              mb: isMobile ? 2 : 0
+            }}
+          >
+            Choose Template
           </Button>
         )}
       </DialogActions>
+      
+      {/* Template Selection Dialog */}
+      <TemplateSelectionDialog
+        open={isTemplateDialogOpen}
+        onClose={() => setIsTemplateDialogOpen(false)}
+        cvId={savedCvId}
+        onTemplateSelected={(updatedCv) => {
+          setIsTemplateDialogOpen(false);
+          // You could add additional handling here if needed
+        }}
+      />
     </Dialog>
   );
 };
