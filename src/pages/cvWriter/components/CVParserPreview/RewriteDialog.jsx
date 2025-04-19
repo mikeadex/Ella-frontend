@@ -753,6 +753,7 @@ const RewriteDialog = ({
                 (savedCvData) => {
                   if (savedCvData && savedCvData.id) {
                     setSavedCvId(savedCvData.id);
+                    setIsTemplateDialogOpen(true);
                   }
                 }
               );
