@@ -51,6 +51,24 @@ const RewriteStages = ({ stages, isDark }) => {
               ? isDark ? '0 2px 5px rgba(0, 0, 0, 0.2)' : '0 2px 5px rgba(0, 0, 0, 0.05)'
               : 'none',
             transition: 'all 0.3s ease',
+            transform: stage.active ? 'scale(1.03)' : 'scale(1)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::after': stage.active ? {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+              animation: 'shimmerEffect 2s infinite',
+              zIndex: 1,
+            } : {},
+            '@keyframes shimmerEffect': {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' }
+            }
           }}
           data-active={stage.active ? 'true' : 'false'}
           data-completed={stage.completed ? 'true' : 'false'}
@@ -79,6 +97,12 @@ const RewriteStages = ({ stages, isDark }) => {
                 ? isDark ? '0 0 10px rgba(59, 130, 246, 0.3)' : '0 0 10px rgba(37, 99, 235, 0.2)'
                 : 'none',
               transition: 'all 0.3s ease',
+              animation: stage.active ? 'pulseEffect 1.5s infinite' : 'none',
+              '@keyframes pulseEffect': {
+                '0%': { boxShadow: isDark ? '0 0 10px rgba(59, 130, 246, 0.3)' : '0 0 10px rgba(37, 99, 235, 0.2)' },
+                '50%': { boxShadow: isDark ? '0 0 15px rgba(59, 130, 246, 0.6)' : '0 0 15px rgba(37, 99, 235, 0.5)' },
+                '100%': { boxShadow: isDark ? '0 0 10px rgba(59, 130, 246, 0.3)' : '0 0 10px rgba(37, 99, 235, 0.2)' }
+              }
             }}
           >
             {getStageIcon(stage)}

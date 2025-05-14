@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Typography, Box, CircularProgress, Button, Grid, useTheme as useMuiTheme, useMediaQuery, Paper } from '@mui/material';
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  IconButton, 
+  Typography, 
+  Box, 
+  CircularProgress, 
+  Button,
+  useTheme as useMuiTheme, 
+  useMediaQuery,
+  Paper,
+  Grid
+} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { DocumentTextIcon, CheckIcon, ArrowRightIcon, PencilIcon, DocumentChartBarIcon, SparklesIcon, TicketIcon } from '@heroicons/react/24/outline';
+import { 
+  DocumentTextIcon, 
+  CheckIcon, 
+  ArrowRightIcon, 
+  PencilIcon, 
+  DocumentChartBarIcon, 
+  SparklesIcon,
+  ArrowDownTrayIcon
+} from '@heroicons/react/24/outline';
 import RewriteStages from './RewriteStages';
 import { TemplateSelectionDialog } from '../TemplateSelection';
+import { useTheme } from '../../../../context/ThemeContext';
 
 // Animation pages for each stage of the rewrite process
 const StageContent = ({ stage, isDark }) => {
@@ -280,6 +303,7 @@ const RewriteDialog = ({
   const [activeStageIndex, setActiveStageIndex] = useState(0);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [savedCvId, setSavedCvId] = useState(null);
+  const [previewMode, setPreviewMode] = useState(false);
 
   // Find the currently active stage index
   useEffect(() => {
@@ -300,7 +324,7 @@ const RewriteDialog = ({
       fullScreen={isMobile}
       PaperProps={{
         sx: {
-          backgroundColor: isDark ? '#1e293b' : 'white',
+          backgroundColor: 'white',
           backgroundImage: 'none',
           borderRadius: isMobile ? 0 : '0.5rem',
           width: '100%'
@@ -310,15 +334,15 @@ const RewriteDialog = ({
       <DialogTitle 
         component="div"
         sx={{ 
-          backgroundColor: isDark ? '#1e293b' : 'white',
-          color: isDark ? '#e2e8f0' : 'inherit',
+          backgroundColor: 'white',
+          color: 'black',
           p: 2,
-          borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+          borderBottom: '1px solid #e5e7eb',
         }}
       >
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <DocumentTextIcon style={{ width: '1.5rem', height: '1.5rem', color: isDark ? '#10b981' : '#059669', marginRight: '0.75rem' }} />
+            <DocumentTextIcon style={{ width: '1.5rem', height: '1.5rem', color: '#10b981', marginRight: '0.75rem' }} />
             <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
               CV Rewrite
             </Typography>
@@ -328,7 +352,7 @@ const RewriteDialog = ({
             color="inherit" 
             onClick={handleClose} 
             aria-label="close"
-            sx={{ color: isDark ? '#e2e8f0' : 'rgba(0, 0, 0, 0.54)' }}
+            sx={{ color: 'black' }}
           >
             <CloseIcon />
           </IconButton>
@@ -337,265 +361,81 @@ const RewriteDialog = ({
       
       <DialogContent 
         sx={{ 
-          backgroundColor: isDark ? '#1e293b' : 'white',
-          color: isDark ? '#e2e8f0' : 'inherit',
+          backgroundColor: 'white',
+          color: 'black',
           p: 3,
-          overflowX: 'hidden'
+          overflowX: 'hidden',
+          minHeight: '400px', 
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: loading ? 'center' : 'flex-start'
         }}
       >
+        {/* Debug output */}
+        {!loading && rewriteData && (
+          <Box sx={{ mb: 2, p: 2, border: '1px dashed red', backgroundColor: '#ffeeee', overflow: 'auto', maxHeight: '200px' }}>
+            <Typography variant="subtitle2" fontWeight="bold" color="error">
+              Debug Information (will be removed):
+            </Typography>
+            <pre style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+              {JSON.stringify({
+                dataType: typeof rewriteData,
+                hasResult: Boolean(rewriteData?.result),
+                resultType: typeof rewriteData?.result,
+                topLevelKeys: rewriteData ? Object.keys(rewriteData) : [],
+                resultKeys: rewriteData?.result ? Object.keys(rewriteData.result) : [],
+                name: rewriteData?.result?.name || rewriteData?.name || rewriteData?.personal_info?.name || "Professional CV",
+                summary: rewriteData?.result?.professional_summary || rewriteData?.result?.summary || rewriteData?.professional_summary || rewriteData?.summary,
+                experience: Boolean(rewriteData?.result?.experience || rewriteData?.experience),
+                skills: Boolean(rewriteData?.result?.skills || rewriteData?.skills),
+                education: Boolean(rewriteData?.result?.education || rewriteData?.education),
+                hasSections: Boolean(rewriteData?.result?.sections || rewriteData?.sections),
+                sectionsLength: rewriteData?.result?.sections?.length || rewriteData?.sections?.length || 0
+              }, null, 2)}
+            </pre>
+          </Box>
+        )}
+        
         {loading ? (
-          <Box sx={{ minHeight: '400px' }}>
+          <Box sx={{ 
+            minHeight: '400px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            backgroundColor: 'white', 
+            borderRadius: '8px',
+            p: 3
+          }}>
             {/* Main loading indicator */}
             <Box sx={{ 
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center', 
               justifyContent: 'center',
-              mb: 4
+              mb: 4,
+              width: '100%'
             }}>
               <CircularProgress 
                 variant="determinate" 
                 value={progress} 
-                size={70} 
-                thickness={4} 
-                sx={{ mb: 2, color: isDark ? '#3b82f6' : '#2563eb' }} 
+                size={80} 
+                thickness={5} 
+                sx={{ mb: 3, color: '#3b82f6' }} 
               />
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
                 Rewriting Your CV
               </Typography>
-              <Typography variant="body2" sx={{ 
-                color: isDark ? '#94a3b8' : '#64748b', 
+              <Typography variant="body1" sx={{ 
+                color: '#64748b', 
                 textAlign: 'center',
-                maxWidth: '600px'
+                maxWidth: '600px',
+                mb: 2
               }}>
                 Our AI is enhancing your CV with professional language and ATS-friendly formatting
               </Typography>
             </Box>
-            
-            {/* Simplified stages display */}
-            <Box sx={{ 
-              maxWidth: '700px', 
-              mx: 'auto', 
-              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.7)',
-              borderRadius: '0.75rem',
-              border: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'}`,
-              overflow: 'hidden',
-              p: 0
-            }}>
-              {stages.map((stage) => (
-                <Box 
-                  key={stage.id}
-                  sx={{
-                    p: 2.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    backgroundColor: stage.active 
-                      ? isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)'
-                      : 'transparent',
-                    borderBottom: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'}`,
-                    transform: stage.active ? 'scale(1.02)' : 'scale(1)',
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: stage.completed
-                        ? isDark ? '#3b82f6' : '#2563eb'
-                        : stage.active
-                        ? isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)'
-                        : isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(203, 213, 225, 0.6)',
-                      color: stage.completed
-                        ? 'white'
-                        : stage.active
-                        ? isDark ? '#60a5fa' : '#3b82f6'
-                        : isDark ? '#94a3b8' : '#64748b',
-                      mr: 2.5,
-                      transition: 'all 0.3s ease',
-                      boxShadow: stage.active ? '0 0 10px rgba(59, 130, 246, 0.3)' : 'none',
-                    }}
-                  >
-                    {stage.completed ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style={{ width: '1.25rem', height: '1.25rem' }}>
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <Typography 
-                        variant="body1" 
-                        component="span" 
-                        sx={{ 
-                          fontWeight: stage.active ? 700 : 600,
-                          fontSize: '1rem'
-                        }}
-                      >
-                        {stage.id}
-                      </Typography>
-                    )}
-                  </Box>
-                  
-                  <Box sx={{ flex: 1 }}>
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        fontWeight: stage.active ? 700 : 600,
-                        fontSize: '0.95rem',
-                        color: stage.active 
-                          ? isDark ? '#e2e8f0' : '#1e293b'
-                          : isDark ? '#94a3b8' : '#64748b',
-                      }}
-                    >
-                      {stage.title || stage.name}
-                    </Typography>
-                    
-                    {stage.active && (
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: isDark ? '#cbd5e1' : '#475569',
-                          fontSize: '0.85rem',
-                          mt: 0.5
-                        }}
-                      >
-                        {stage.description}
-                      </Typography>
-                    )}
-                  </Box>
-                  
-                  {stage.active && (
-                    <Box 
-                      sx={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
-                        ml: 2,
-                        animation: 'pulse 1.2s infinite'
-                      }} 
-                    />
-                  )}
-                </Box>
-              ))}
-            </Box>
-            
-            {/* Active stage visualization */}
-            {stages && stages.length > 0 && stages[activeStageIndex] && stages[activeStageIndex].active && (
-              <Box sx={{ 
-                mt: 4, 
-                textAlign: 'center', 
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.7)',
-                borderRadius: '0.75rem',
-                p: 3,
-                maxWidth: '700px',
-                mx: 'auto',
-                border: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'}`,
-              }}>
-                <Typography variant="caption" sx={{ 
-                  color: isDark ? '#60a5fa' : '#3b82f6',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'block'
-                }}>
-                  Currently Processing
-                </Typography>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  {stages[activeStageIndex].description}
-                </Typography>
-                
-                {/* Simple animation based on current stage */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  {activeStageIndex === 0 && (
-                    <Box sx={{ 
-                      width: '200px', 
-                      height: '12px', 
-                      borderRadius: '6px', 
-                      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(203, 213, 225, 0.6)',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}>
-                      <Box sx={{ 
-                        position: 'absolute', 
-                        top: 0, 
-                        left: 0, 
-                        height: '100%', 
-                        width: '30%', 
-                        backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
-                        borderRadius: '6px',
-                        animation: 'indeterminateProgress 1.5s infinite ease-in-out'
-                      }} />
-                    </Box>
-                  )}
-                  
-                  {activeStageIndex === 1 && (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {[1, 2, 3].map((i) => (
-                        <Box 
-                          key={i}
-                          sx={{ 
-                            width: 10, 
-                            height: 10, 
-                            borderRadius: '50%', 
-                            backgroundColor: isDark ? '#60a5fa' : '#3b82f6',
-                            animation: `bounce 1.4s infinite ease-in-out both`,
-                            animationDelay: `${i * 0.16}s`
-                          }} 
-                        />
-                      ))}
-                    </Box>
-                  )}
-                  
-                  {activeStageIndex === 2 && (
-                    <Box sx={{ 
-                      width: 24, 
-                      height: 24, 
-                      borderRadius: '50%', 
-                      borderTop: `2px solid ${isDark ? '#60a5fa' : '#3b82f6'}`,
-                      borderRight: `2px solid transparent`,
-                      animation: 'spin 0.8s linear infinite'
-                    }} />
-                  )}
-                  
-                  {activeStageIndex === 3 && (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <SparklesIcon style={{ width: '1.5rem', height: '1.5rem', color: isDark ? '#60a5fa' : '#3b82f6', animation: 'pulse 1.2s infinite' }} />
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            )}
-            
-            {/* Custom animation keyframes */}
-            <style jsx global>{`
-              @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.4; }
-              }
-              @keyframes bounce {
-                0%, 80%, 100% { transform: scale(0); }
-                40% { transform: scale(1); }
-              }
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-              @keyframes indeterminateProgress {
-                0% { left: -30%; }
-                100% { left: 100%; }
-              }
-              @keyframes blink {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0; }
-              }
-              @keyframes slideIn {
-                0% { transform: translateY(20px); opacity: 0; }
-                100% { transform: translateY(0); opacity: 1; }
-              }
-            `}</style>
           </Box>
         ) : error ? (
           <Box 
@@ -624,96 +464,297 @@ const RewriteDialog = ({
             </Button>
           </Box>
         ) : rewriteData ? (
-          <Box sx={{ p: 3 }}>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Box sx={{ 
+            width: '100%', 
+            minHeight: '400px',
+            backgroundColor: 'white', 
+            borderRadius: '8px',
+            p: 3,
+            border: '1px solid #e5e7eb',
+            position: 'relative'
+          }}>
+            {/* Content display - Template-based preview */}
+            <Box sx={{ 
+              mb: 4, 
+              border: '1px solid #e5e7eb', 
+              borderRadius: '8px',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              {/* Print button */}
               <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                mb: 2
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                zIndex: 10
               }}>
-                <CheckIcon style={{ width: '2rem', height: '2rem', color: isDark ? '#10b981' : '#059669' }} />
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<ArrowDownTrayIcon style={{ width: '1rem', height: '1rem' }} />}
+                  sx={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: '#2563eb',
+                    '&:hover': {
+                      backgroundColor: 'white'
+                    },
+                    fontSize: '0.75rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
+                  onClick={() => {
+                    console.log("Print preview clicked, CV content:", rewriteData);
+                    const printContent = document.getElementById('cv-preview-content');
+                    if (printContent) {
+                      const printWindow = window.open('', '_blank');
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>CV Preview - ${rewriteData?.result?.name || rewriteData?.name || "Professional CV"}</title>
+                            <style>
+                              body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+                              .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+                              .header { background-color: #2563eb; color: white; padding: 20px; }
+                              h1, h2, h3, h4, h5, h6 { margin-top: 0; }
+                              .content { display: flex; flex-wrap: wrap; }
+                              .sidebar { width: 30%; background-color: #f8fafc; padding: 20px; }
+                              .main { width: 70%; padding: 20px; }
+                              .section { margin-bottom: 20px; }
+                              .section-title { color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px; }
+                              @media print {
+                                body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+                                .header { background-color: #2563eb !important; color: white !important; }
+                                .sidebar { background-color: #f8fafc !important; }
+                                .section-title { color: #2563eb !important; }
+                              }
+                              @media (max-width: 768px) {
+                                .sidebar, .main { width: 100%; }
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="container">
+                              ${printContent.innerHTML}
+                            </div>
+                            <script>
+                              setTimeout(() => { window.print(); }, 500);
+                            </script>
+                          </body>
+                        </html>
+                      `);
+                      printWindow.document.close();
+                    }
+                  }}
+                >
+                  Print Preview
+                </Button>
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                Your CV has been rewritten!
-              </Typography>
-              <Typography variant="body1" sx={{ color: isDark ? '#94a3b8' : '#64748b', mb: 4, maxWidth: '600px', mx: 'auto' }}>
-                We've enhanced your CV with professional language and formatting. Review the rewritten content below.
-              </Typography>
+              
+              {/* CV Content */}
+              <Box id="cv-preview-content">
+                {/* Header with name and title */}
+                <Box sx={{ 
+                  backgroundColor: '#2563eb', 
+                  color: 'white', 
+                  p: 3,
+                  borderBottom: '4px solid #1d4ed8'
+                }}>
+                  <Typography variant="h4" fontWeight="bold">
+                    {rewriteData?.result?.name || rewriteData?.name || rewriteData?.personal_info?.name || "Professional CV"}
+                  </Typography>
+                  {(rewriteData?.result?.title || rewriteData?.title || rewriteData?.personal_info?.title) && (
+                    <Typography variant="h6" sx={{ mt: 1, opacity: 0.9 }}>
+                      {rewriteData?.result?.title || rewriteData?.title || rewriteData?.personal_info?.title}
+                    </Typography>
+                  )}
+                </Box>
+                
+                {/* Main content in a clean two-column layout */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', md: 'row' }, 
+                  backgroundColor: 'white'
+                }}>
+                  {/* Left sidebar */}
+                  <Box sx={{ 
+                    width: { xs: '100%', md: '30%' }, 
+                    p: 3,
+                    backgroundColor: '#f8fafc',
+                    borderRight: { xs: 'none', md: '1px solid #e5e7eb' },
+                    borderBottom: { xs: '1px solid #e5e7eb', md: 'none' }
+                  }}>
+                    {/* Contact Details Section */}
+                    {((rewriteData?.result?.email || rewriteData?.result?.phone || rewriteData?.result?.location) ||
+                      (rewriteData?.email || rewriteData?.phone || rewriteData?.location) ||
+                      (rewriteData?.personal_info?.email || rewriteData?.personal_info?.phone || rewriteData?.personal_info?.location)) && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: '#2563eb' }}>
+                          Contact Details
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {(rewriteData?.result?.email || rewriteData?.email || rewriteData?.personal_info?.email) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box component="span" sx={{ color: '#2563eb', fontWeight: 'bold' }}>Email:</Box>
+                              <Typography variant="body2">
+                                {rewriteData?.result?.email || rewriteData?.email || rewriteData?.personal_info?.email}
+                              </Typography>
+                            </Box>
+                          )}
+                          {(rewriteData?.result?.phone || rewriteData?.phone || rewriteData?.personal_info?.phone) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box component="span" sx={{ color: '#2563eb', fontWeight: 'bold' }}>Phone:</Box>
+                              <Typography variant="body2">
+                                {rewriteData?.result?.phone || rewriteData?.phone || rewriteData?.personal_info?.phone}
+                              </Typography>
+                            </Box>
+                          )}
+                          {(rewriteData?.result?.location || rewriteData?.location || rewriteData?.personal_info?.location) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box component="span" sx={{ color: '#2563eb', fontWeight: 'bold' }}>Location:</Box>
+                              <Typography variant="body2">
+                                {rewriteData?.result?.location || rewriteData?.location || rewriteData?.personal_info?.location}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                    
+                    {/* Skills Section */}
+                    {(rewriteData?.result?.skills || rewriteData?.skills || rewriteData?.personal_info?.skills) && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: '#2563eb' }}>
+                          Skills
+                        </Typography>
+                        <Typography variant="body2">
+                          {rewriteData?.result?.skills || rewriteData?.skills || rewriteData?.personal_info?.skills}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {/* Education Section - Can be in sidebar or main area depending on template */}
+                    {(rewriteData?.result?.education || rewriteData?.education || rewriteData?.personal_info?.education) && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: '#2563eb' }}>
+                          Education
+                        </Typography>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                          {rewriteData?.result?.education || rewriteData?.education || rewriteData?.personal_info?.education}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  
+                  {/* Main content area */}
+                  <Box sx={{ 
+                    width: { xs: '100%', md: '70%' },
+                    p: 3 
+                  }}>
+                    {/* Professional Summary */}
+                    <Box sx={{ mb: 4 }}>
+                      <Typography variant="h6" fontWeight="bold" sx={{ 
+                        mb: 2, 
+                        color: '#2563eb',
+                        pb: 1,
+                        borderBottom: '2px solid #e5e7eb'
+                      }}>
+                        Professional Summary
+                      </Typography>
+                      <Typography variant="body1" sx={{ 
+                        lineHeight: 1.7,
+                        color: '#1e293b'  
+                      }}>
+                        {rewriteData?.result?.professional_summary || 
+                          rewriteData?.result?.summary || 
+                          rewriteData?.professional_summary || 
+                          rewriteData?.summary || 
+                          rewriteData?.personal_info?.summary ||
+                          "No professional summary provided"}
+                      </Typography>
+                    </Box>
+                    
+                    {/* Experience section */}
+                    {(rewriteData?.result?.experience || rewriteData?.experience || rewriteData?.personal_info?.experience) && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ 
+                          mb: 2, 
+                          color: '#2563eb',
+                          pb: 1,
+                          borderBottom: '2px solid #e5e7eb'
+                        }}>
+                          Experience
+                        </Typography>
+                        <Typography variant="body1" sx={{ 
+                          lineHeight: 1.7,
+                          color: '#1e293b',
+                          whiteSpace: 'pre-line'
+                        }}>
+                          {rewriteData?.result?.experience || rewriteData?.experience || rewriteData?.personal_info?.experience}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {/* Dynamic Sections */}
+                    {rewriteData?.result?.sections && 
+                     Array.isArray(rewriteData?.result?.sections) && 
+                     rewriteData.result.sections.map((section, index) => (
+                      <Box key={index} sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ 
+                          mb: 2, 
+                          color: '#2563eb',
+                          pb: 1,
+                          borderBottom: '2px solid #e5e7eb'
+                        }}>
+                          {section.title}
+                        </Typography>
+                        <Typography variant="body1" sx={{ 
+                          lineHeight: 1.7,
+                          color: '#1e293b',
+                          whiteSpace: 'pre-line'
+                        }}>
+                          {section.content}
+                        </Typography>
+                      </Box>
+                    ))}
+                    
+                    {rewriteData?.sections && 
+                     Array.isArray(rewriteData?.sections) && 
+                     rewriteData.sections.map((section, index) => (
+                      <Box key={index} sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ 
+                          mb: 2, 
+                          color: '#2563eb',
+                          pb: 1,
+                          borderBottom: '2px solid #e5e7eb'
+                        }}>
+                          {section.title}
+                        </Typography>
+                        <Typography variant="body1" sx={{ 
+                          lineHeight: 1.7,
+                          color: '#1e293b',
+                          whiteSpace: 'pre-line'
+                        }}>
+                          {section.content}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
             </Box>
             
+            {/* Action guidance */}
             <Box sx={{ 
-              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-              borderRadius: '0.5rem',
+              backgroundColor: '#f0f9ff',
               p: 3,
-              mb: 4,
-              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.6)',
-              maxHeight: '400px',
-              overflow: 'auto'
+              borderRadius: '8px',
+              border: '1px solid #bae6fd',
             }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                Professional Summary
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#0284c7' }}>
+                Ready to save your CV
               </Typography>
-              <Typography variant="body1" sx={{ mb: 3, whiteSpace: 'pre-line' }}>
-                {rewriteData.professional_summary || rewriteData.summary || "No professional summary provided"}
-              </Typography>
-              
-              {rewriteData.sections && rewriteData.sections.map((section, index) => (
-                <Box key={index} sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    {section.title}
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                    {section.content}
-                  </Typography>
-                </Box>
-              ))}
-              
-              {!rewriteData.sections && rewriteData.experience && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    Experience
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                    {rewriteData.experience}
-                  </Typography>
-                </Box>
-              )}
-              
-              {!rewriteData.sections && rewriteData.skills && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    Skills
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                    {rewriteData.skills}
-                  </Typography>
-                </Box>
-              )}
-              
-              {!rewriteData.sections && rewriteData.education && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    Education
-                  </Typography>
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                    {rewriteData.education}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-            
-            <Box sx={{ 
-              bgcolor: isDark ? 'rgba(37, 99, 235, 0.1)' : 'rgba(219, 234, 254, 0.8)',
-              p: 3,
-              borderRadius: '0.5rem',
-              border: `1px solid ${isDark ? 'rgba(37, 99, 235, 0.3)' : 'rgba(37, 99, 235, 0.2)'}`,
-            }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: isDark ? '#60a5fa' : '#2563eb' }}>
-                What's next?
-              </Typography>
-              <Typography variant="body2" sx={{ color: isDark ? '#93c5fd' : '#1e40af', mb: 2 }}>
-                Save this rewritten CV to your CV writer to further customize it, download it as a PDF, or use it for job applications.
+              <Typography variant="body2" sx={{ color: '#0369a1' }}>
+                Click "Save CV" below to save this rewritten CV to your account.
+                Then you can choose a template and download it as a PDF.
               </Typography>
             </Box>
           </Box>
@@ -722,13 +763,15 @@ const RewriteDialog = ({
 
       <DialogActions sx={{ 
         p: 2, 
-        backgroundColor: isDark ? '#1e293b' : 'white',
-        borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+        backgroundColor: 'white',
+        borderTop: '1px solid #e5e7eb',
+        display: 'flex',
+        justifyContent: 'space-between'
       }}>
         <Button 
           onClick={handleClose}
           sx={{ 
-            color: isDark ? '#94a3b8' : '#64748b',
+            color: '#64748b',
             textTransform: 'none',
             mr: 1
           }}
@@ -745,7 +788,12 @@ const RewriteDialog = ({
             sx={{ 
               minWidth: '180px', 
               fontWeight: 600,
-              mb: isMobile ? 2 : 0
+              mb: isMobile ? 2 : 0,
+              zIndex: 10, // Ensure button is clickable
+              backgroundColor: '#2563eb', 
+              '&:hover': {
+                backgroundColor: '#1d4ed8'
+              }
             }}
             onClick={() => {
               handleSaveRewrite(

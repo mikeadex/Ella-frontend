@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, CircularProgress, Alert, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
 import TemplateSelector from './TemplateSelector';
 import { setTemplateForCV } from '../../../../api/cv';
 
@@ -9,6 +11,7 @@ import { setTemplateForCV } from '../../../../api/cv';
 const TemplateSelectionDialog = ({ open, onClose, cvId, onTemplateSelected }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   
   // Handle template selection and API call
   const handleTemplateSelect = async (template) => {
@@ -17,6 +20,7 @@ const TemplateSelectionDialog = ({ open, onClose, cvId, onTemplateSelected }) =>
       setError(null);
       
       // Call API to update the CV with the selected template
+      console.log("Setting template for CV:", cvId, "Template ID:", template.id);
       const updatedCv = await setTemplateForCV(cvId, template.id);
       
       // Call callback with updated CV data
@@ -25,12 +29,31 @@ const TemplateSelectionDialog = ({ open, onClose, cvId, onTemplateSelected }) =>
       }
       
       setLoading(false);
-      onClose();
+      
+      // Navigate back to the dashboard with refresh flags
+      navigate('/dashboard', { 
+        state: { 
+          fromCVCreation: true,
+          refreshData: true,
+          successMessage: 'CV created successfully! You can now view it in your dashboard.' 
+        }
+      });
     } catch (err) {
       console.error('Error setting template:', err);
       setError('Failed to apply the template. Please try again.');
       setLoading(false);
     }
+  };
+  
+  const handleFinish = () => {
+    // Navigate back to the dashboard with refresh flags
+    navigate('/dashboard', { 
+      state: { 
+        fromCVCreation: true,
+        refreshData: true,
+        successMessage: 'CV created successfully! You can now view it in your dashboard.' 
+      }
+    });
   };
   
   return (
@@ -42,14 +65,25 @@ const TemplateSelectionDialog = ({ open, onClose, cvId, onTemplateSelected }) =>
       PaperProps={{
         sx: { 
           minHeight: '70vh',
-          maxHeight: '90vh'
+          maxHeight: '90vh',
+          backgroundColor: 'white',
+          color: 'black'
         }
       }}
     >
       <DialogTitle>
-        <Typography variant="h5" component="div" fontWeight="500">
-          Choose a Template for Your CV
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h5" component="div" fontWeight="500">
+            Choose a Template for Your CV
+          </Typography>
+          <IconButton 
+            onClick={onClose}
+            disabled={loading}
+            sx={{ color: 'rgba(0, 0, 0, 0.54)' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </DialogTitle>
       
       <DialogContent dividers>
@@ -73,6 +107,12 @@ const TemplateSelectionDialog = ({ open, onClose, cvId, onTemplateSelected }) =>
       </DialogContent>
       
       <DialogActions>
+        <Button 
+          onClick={handleFinish}
+          disabled={loading}
+        >
+          Finish
+        </Button>
         <Button 
           onClick={onClose}
           disabled={loading}

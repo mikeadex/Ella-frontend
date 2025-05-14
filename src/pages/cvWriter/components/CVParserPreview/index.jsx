@@ -640,18 +640,97 @@ const CVParserPreview = () => {
             ? progressUpdater(rewriteProgress) 
             : progressUpdater);
         },
-      setRewriteDialogOpen,
-      setRewriteData,
-      setRewriteError,
-      setRewriteLoading
-    });
+        setRewriteDialogOpen,
+        setRewriteData,
+        setRewriteError,
+        setRewriteLoading
+      });
       
       if (result && result.session_id) {
         setRewriteSessionId(result.session_id);
       }
       
       // Set the rewritten data
-      setRewriteData(result);
+      console.log("Rewrite completed, data received:", result);
+      
+      // Ensure data is properly formatted
+      if (result && typeof result === 'object') {
+        // Handle API response which might be in various formats
+        // Create a consistent normalized structure
+        const normalizedData = {
+          // First copy any top-level properties
+          ...result,
+          
+          // Then ensure a result object with required fields exists
+          result: {
+            // Include any existing result properties first
+            ...(result.result || {}),
+            
+            // Guarantee all required fields exist with fallbacks
+            name: (result.result?.name || result.name || result.personal_info?.name || "Professional CV"),
+            title: (result.result?.title || result.title || result.personal_info?.title || ""),
+            email: (result.result?.email || result.email || result.personal_info?.email || ""),
+            phone: (result.result?.phone || result.phone || result.personal_info?.phone || ""),
+            location: (result.result?.location || result.location || result.personal_info?.location || ""),
+            
+            professional_summary: (
+              result.result?.professional_summary || 
+              result.result?.summary || 
+              result.professional_summary || 
+              result.summary || 
+              result.personal_info?.summary ||
+              "A professional with experience in the field."
+            ),
+            
+            experience: (
+              result.result?.experience || 
+              result.experience || 
+              result.personal_info?.experience || 
+              "No experience data available."
+            ),
+            
+            skills: (
+              result.result?.skills || 
+              result.skills || 
+              result.personal_info?.skills || 
+              "No skills data available."
+            ),
+            
+            education: (
+              result.result?.education || 
+              result.education || 
+              result.personal_info?.education || 
+              "No education data available."
+            ),
+            
+            sections: (
+              Array.isArray(result.result?.sections) ? result.result.sections : 
+              Array.isArray(result.sections) ? result.sections : 
+              []
+            )
+          }
+        };
+        
+        console.log("Normalized rewrite data structure:", {
+          hasResult: Boolean(normalizedData.result),
+          resultIsObject: typeof normalizedData.result === 'object',
+          topLevelKeys: Object.keys(normalizedData),
+          resultKeys: normalizedData.result ? Object.keys(normalizedData.result) : [],
+          name: normalizedData.result.name,
+          summary: normalizedData.result.professional_summary,
+          hasExperience: Boolean(normalizedData.result.experience),
+          hasSkills: Boolean(normalizedData.result.skills),
+          hasEducation: Boolean(normalizedData.result.education),
+          hasSections: Array.isArray(normalizedData.result.sections),
+          sectionsLength: Array.isArray(normalizedData.result.sections) ? normalizedData.result.sections.length : 0
+        });
+        
+        setRewriteData(normalizedData);
+      } else {
+        // If result is not an object, just set it as is
+        setRewriteData(result);
+      }
+      
       // Ensure the loading state is turned off
       setRewriteLoading(false);
       

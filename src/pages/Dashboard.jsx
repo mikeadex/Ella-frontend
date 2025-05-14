@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../api/axios';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 import {
   DocumentDuplicateIcon,
@@ -18,6 +18,7 @@ import JobsList from '../components/JobsList/JobsList';
 import RecentApplications from '../components/Dashboard/RecentApplications';
 import Applications from './Applications';
 import Footer from '../components/Footer/Footer';
+import { Snackbar, Alert } from '@mui/material';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -48,12 +49,16 @@ function formatRelativeTime(date) {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [cvs, setCvs] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [blogPosts, setBlogPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Safely calculate dashboard metrics with null checks
   const dashboardMetrics = {
@@ -82,8 +87,10 @@ const Dashboard = () => {
         
         // Add error handling for each request separately
         try {
+          console.log('Fetching CVs for dashboard...');
           const cvsResponse = await axiosInstance.get('/api/cv_writer/cv/');
           setCvs(Array.isArray(cvsResponse.data) ? cvsResponse.data : []);
+          console.log('CV data received:', cvsResponse.data);
         } catch (cvsError) {
           console.error('Error fetching CVs:', cvsError);
           setCvs([]);
@@ -123,7 +130,28 @@ const Dashboard = () => {
       setBlogPosts([]);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, lastRefreshTime]);
+
+  // Add a function to refresh data that can be called directly
+  const refreshData = () => {
+    setLastRefreshTime(Date.now());
+  };
+
+  // Listen for navigation changes to refresh data when coming back from CV writer
+  useEffect(() => {
+    // Check if we're navigating back from CV writer or CV parser page
+    if (location.pathname === '/dashboard' && 
+        (location.state?.from === '/cv-writer' || 
+         location.state?.fromCVCreation || 
+         location.state?.refreshData)) {
+      console.log('Returning from CV creation flow, refreshing data...');
+      refreshData();
+      setOpenSnackbar(true);
+      if (location.state?.successMessage) {
+        setSuccessMessage(location.state.successMessage);
+      }
+    }
+  }, [location]);
 
   const CVOverviewSection = () => {
     const quickLinks = [
@@ -577,6 +605,15 @@ const Dashboard = () => {
         </div>
       </div>
       <Footer />
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          {successMessage || 'Successfully created CV!'}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
